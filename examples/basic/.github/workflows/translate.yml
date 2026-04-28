@@ -1,0 +1,29 @@
+name: translate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "**"
+    paths:
+      - messages/en.json
+      - translate.config.json
+
+concurrency:
+  group: translate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ffcabbar/lingobot@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

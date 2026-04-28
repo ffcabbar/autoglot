@@ -1,0 +1,15 @@
+{
+  "_comment": "Deny-list. Namespaces listed here are restricted to the locales in their array. Namespaces NOT listed translate to every locale. Only add an entry to LIMIT a namespace.",
+  "source": "messages/en.json",
+  "messagesDir": "messages",
+  "lockFile": "translate.lock",
+  "model": "claude-haiku-4-5",
+  "glossary": ["MyApp", "Stripe", "API"],
+  "namespaceContext": {
+    "checkout": "Payment checkout form copy (labels, validation errors, buttons).",
+    "dashboard": "Merchant dashboard navigation, tables, forms, settings."
+  },
+  "namespaces": {
+    "dashboard": ["es", "de"]
+  }
+}

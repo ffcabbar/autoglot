@@ -1,0 +1,32 @@
+{
+  "name": "lingobot",
+  "version": "0.0.0",
+  "description": "Self-hosted, AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. Drop-in replacement for Languine.",
+  "type": "module",
+  "bin": {
+    "lingobot": "./bin/translate.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "translate": "node bin/translate.mjs"
+  },
+  "keywords": [
+    "i18n",
+    "l10n",
+    "translation",
+    "anthropic",
+    "claude",
+    "next-intl",
+    "react-i18next",
+    "localization",
+    "languine"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

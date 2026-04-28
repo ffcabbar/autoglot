@@ -1,0 +1,15 @@
+{
+  "greeting": "Hello, world!",
+  "checkout": {
+    "cta": "Pay now",
+    "summary": "You will be charged {amount} {currency}.",
+    "errors": {
+      "cardDeclined": "Your card was declined.",
+      "expired": "This card has expired."
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {name}",
+    "items": "{count, plural, one {# item} other {# items}}"
+  }
+}

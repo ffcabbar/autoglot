@@ -1,0 +1,118 @@
+name: 'AI Translate'
+description: 'Self-hosted, AI-powered i18n translation bot. Diffs your source locale on every push, translates only what changed, commits the JSON files back.'
+branding:
+  icon: 'globe'
+  color: 'purple'
+
+inputs:
+  anthropic-api-key:
+    description: 'Anthropic API key. Required.'
+    required: true
+  source:
+    description: 'Path to your source locale file (e.g. messages/en.json).'
+    required: false
+    default: 'messages/en.json'
+  messages-dir:
+    description: 'Directory containing your locale JSON files.'
+    required: false
+    default: 'messages'
+  lock-file:
+    description: 'Path to the translation lock file.'
+    required: false
+    default: 'translate.lock'
+  config:
+    description: 'Path to translate.config.json.'
+    required: false
+    default: 'translate.config.json'
+  model:
+    description: 'Anthropic model id.'
+    required: false
+    default: 'claude-haiku-4-5'
+  commit:
+    description: 'If "true", commit and push translation changes back to the branch.'
+    required: false
+    default: 'true'
+  pr-comment:
+    description: 'If "true", post a cost-summary comment on the open PR (requires GITHUB_TOKEN).'
+    required: false
+    default: 'true'
+  package-version:
+    description: 'Pin a specific package version for reproducibility.'
+    required: false
+    default: 'latest'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Run translation
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        SUMMARY_PATH: ${{ runner.temp }}/translate-summary.md
+      run: |
+        npx -y lingobot@${{ inputs.package-version }} \
+          --source="${{ inputs.source }}" \
+          --messages-dir="${{ inputs.messages-dir }}" \
+          --lock-file="${{ inputs.lock-file }}" \
+          --config="${{ inputs.config }}" \
+          --model="${{ inputs.model }}" \
+          --summary-path="${SUMMARY_PATH}"
+
+    - name: Commit and push translations
+      if: inputs.commit == 'true'
+      id: commit
+      shell: bash
+      run: |
+        set -euo pipefail
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "${{ inputs.messages-dir }}"/*.json "${{ inputs.lock-file }}"
+        if git diff --cached --quiet; then
+          echo "No translation changes — skipping."
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        {
+          echo "chore(i18n): update translations"
+          echo
+          cat "${{ runner.temp }}/translate-summary.md"
+        } > "${{ runner.temp }}/translate-commit-msg.txt"
+        git commit -F "${{ runner.temp }}/translate-commit-msg.txt"
+        for attempt in 1 2 3; do
+          git rebase --abort 2>/dev/null || true
+          if git pull --rebase origin "${GITHUB_REF_NAME}" \
+            && git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Push attempt ${attempt} failed; retrying."
+          sleep 2
+        done
+        echo "::error::Failed to push translations after 3 attempts."
+        exit 1
+
+    - name: Post cost comment on open PR
+      if: inputs.pr-comment == 'true' && steps.commit.outputs.changed == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        PR=$(gh pr list --head "${GITHUB_REF_NAME}" --state open \
+          --json number --jq '.[0].number // empty')
+        if [ -z "${PR}" ]; then
+          echo "No open PR for ${GITHUB_REF_NAME} — skipping comment."
+          exit 0
+        fi
+        {
+          cat "${{ runner.temp }}/translate-summary.md"
+          echo
+          echo "---"
+          echo "_Triggered by [\`${GITHUB_SHA:0:7}\`](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) · [view workflow run](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})_"
+        } > "${{ runner.temp }}/translate-comment.md"
+        gh pr comment "${PR}" --body-file "${{ runner.temp }}/translate-comment.md"
