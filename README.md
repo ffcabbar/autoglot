@@ -93,6 +93,7 @@ After the first run, `messages/es.json` and `messages/de.json` are populated, an
 ```
 --check                  CI gate: exit 1 if lock != source. No AI call.
 --dry-run                Show plan, no AI call, no writes.
+--quiet                  Suppress per-locale and per-chunk progress. CI keeps verbose logs.
 --locales=de,fr          Restrict run to specific locales.
 --model=<id>             Override the configured model.
 --source=<path>          Override config.source.

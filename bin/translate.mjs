@@ -30,14 +30,28 @@
 //   --lock-file=<path>          Override config.lockFile.
 //   --import-languine[=<path>]  Import a languine.lock to seed our lock file.
 
-import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "node:fs";
-import { dirname, join, resolve, isAbsolute } from "node:path";
+import { join, resolve, isAbsolute } from "node:path";
 import { tmpdir } from "node:os";
+import {
+  parseArgs,
+  flatten,
+  mergeOrdered,
+  extractPlaceholders,
+  setsEqual,
+  hash,
+  chunk,
+  parseLockYaml,
+  dumpLockYaml,
+  allowedTopLevelNamespaces,
+  pickAllowedSource,
+  pLimit,
+} from "./helpers.mjs";
 
 // --- Constants ------------------------------------------------------------
 const CHUNK_SIZE = 200;
 const RATE_LIMIT_MAX_RETRIES = 5;
+const LOCALE_CONCURRENCY = 8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // USD per 1M tokens. Update when Anthropic pricing changes.
@@ -64,6 +78,11 @@ const SUMMARY_FILE = args["summary-path"]
   : join(tmpdir(), "translate-summary.md");
 const STEP_SUMMARY = process.env.GITHUB_STEP_SUMMARY;
 const MODEL = args.model || config.model || "claude-haiku-4-5";
+// --quiet suppresses per-locale and per-chunk progress lines. The summary
+// (totals + per-locale table) always prints. CI runs default to verbose so
+// workflow logs stay actionable when something goes wrong.
+const QUIET = args.quiet === true && !process.env.CI;
+const verbose = (...m) => { if (!QUIET) console.log(...m); };
 
 if (!PRICING[MODEL]) {
   console.error(`[translate] Unknown model '${MODEL}'. Known: ${Object.keys(PRICING).join(", ")}`);
@@ -104,6 +123,9 @@ async function run() {
   }
 
   console.log(`[translate] source: ${newDelta.length} new keys, ${changedDelta.length} modified (${newDelta.length + changedDelta.length} total delta)`);
+  if (targets.length === 0) {
+    console.log("[translate] No target locales found — drop a <locale>.json into messagesDir.");
+  }
 
   if (args.check) {
     if (newDelta.length + changedDelta.length === 0) {
@@ -121,10 +143,15 @@ async function run() {
 
   if (!existsSync(MESSAGES_DIR)) mkdirSync(MESSAGES_DIR, { recursive: true });
 
+  // Per-locale work runs in parallel up to LOCALE_CONCURRENCY. Each locale
+  // writes its own file, so there's no contention. Aggregation into
+  // perLocale/totals happens at synchronous points (push, +=) which are
+  // safe in single-threaded JS.
   const perLocale = [];
   let totalIn = 0, totalOut = 0, totalCost = 0, skipped = 0;
+  const limit = pLimit(LOCALE_CONCURRENCY);
 
-  for (const locale of targets) {
+  async function processLocale(locale) {
     const targetPath = join(MESSAGES_DIR, `${locale}.json`);
     const existing = existsSync(targetPath) ? readJSON(targetPath) : {};
     const existingFlat = flatten(existing);
@@ -141,26 +168,26 @@ async function run() {
 
     if (keysToTranslate.length === 0) {
       if (!hasOrphans) {
-        console.log(`[translate] ${locale.padEnd(6)} → up to date (skipped)`);
+        verbose(`[translate] ${locale.padEnd(6)} → up to date (skipped)`);
         skipped++;
-        continue;
+        return;
       }
       if (args["dry-run"]) {
-        console.log(`[translate] ${locale.padEnd(6)} → would remove orphan keys (dry-run)`);
+        verbose(`[translate] ${locale.padEnd(6)} → would remove orphan keys (dry-run)`);
         perLocale.push({ locale, keys: 0, inTok: 0, outTok: 0, cost: 0 });
-        continue;
+        return;
       }
       const merged = mergeOrdered(filteredSource, existing, {});
       writeFileSync(targetPath, JSON.stringify(merged, null, 2) + "\n");
-      console.log(`[translate] ${locale.padEnd(6)} → removed orphan keys`);
+      verbose(`[translate] ${locale.padEnd(6)} → removed orphan keys`);
       perLocale.push({ locale, keys: 0, inTok: 0, outTok: 0, cost: 0 });
-      continue;
+      return;
     }
 
     if (args["dry-run"]) {
-      console.log(`[translate] ${locale.padEnd(6)} → ${keysToTranslate.length} keys (dry-run)`);
+      verbose(`[translate] ${locale.padEnd(6)} → ${keysToTranslate.length} keys (dry-run)`);
       perLocale.push({ locale, keys: keysToTranslate.length, inTok: 0, outTok: 0, cost: 0 });
-      continue;
+      return;
     }
 
     const chunks = chunk(keysToTranslate, CHUNK_SIZE);
@@ -169,7 +196,7 @@ async function run() {
     for (const [idx, keys] of chunks.entries()) {
       const payload = Object.fromEntries(keys.map((k) => [k, sourceFlat[k]]));
       if (chunks.length > 1) {
-        console.log(`[translate] ${locale.padEnd(6)} → chunk ${idx + 1}/${chunks.length} (${keys.length} keys)`);
+        verbose(`[translate] ${locale.padEnd(6)} → chunk ${idx + 1}/${chunks.length} (${keys.length} keys)`);
       }
       const { translations: t, usage } = await translate(locale, payload);
       Object.assign(translations, t);
@@ -185,8 +212,13 @@ async function run() {
     totalOut += usageOut;
     totalCost += cost;
     perLocale.push({ locale, keys: keysToTranslate.length, inTok: usageIn, outTok: usageOut, cost });
-    console.log(`[translate] ${locale.padEnd(6)} → ${keysToTranslate.length} keys | in: ${usageIn} out: ${usageOut} | $${cost.toFixed(5)}`);
+    verbose(`[translate] ${locale.padEnd(6)} → ${keysToTranslate.length} keys | in: ${usageIn} out: ${usageOut} | $${cost.toFixed(5)}`);
   }
+
+  await Promise.all(targets.map((locale) => limit(() => processLocale(locale))));
+  // Sort perLocale alphabetically so the summary table is stable across runs
+  // (parallel completion order would otherwise scramble it).
+  perLocale.sort((a, b) => a.locale.localeCompare(b.locale));
 
   if (!args["dry-run"]) {
     for (const key of Object.keys(sourceFlat)) lock.hashes[key] = hash(sourceFlat[key]);
@@ -295,17 +327,6 @@ async function translate(locale, payload, attempt = 1, rateAttempt = 0) {
 }
 
 // --- Helpers --------------------------------------------------------------
-function parseArgs(argv) {
-  const out = {};
-  for (const a of argv) {
-    if (!a.startsWith("--")) continue;
-    const eq = a.indexOf("=");
-    if (eq === -1) out[a.slice(2)] = true;
-    else out[a.slice(2, eq)] = a.slice(eq + 1);
-  }
-  return out;
-}
-
 function resolvePath(p) {
   return isAbsolute(p) ? p : resolve(CWD, p);
 }
@@ -316,7 +337,7 @@ function readJSON(p) {
 
 function loadLock() {
   if (!existsSync(LOCK_FILE)) return { version: 1, source: SOURCE_FILE, hashes: {} };
-  return parseLockYaml(readFileSync(LOCK_FILE, "utf8"));
+  return parseLockYaml(readFileSync(LOCK_FILE, "utf8"), SOURCE_FILE);
 }
 
 function loadConfig(p) {
@@ -333,56 +354,6 @@ function loadConfig(p) {
   }
 }
 
-function allowedTopLevelNamespaces(source, locale, cfg) {
-  const out = new Set();
-  for (const ns of Object.keys(source)) {
-    const restriction = cfg.namespaces[ns];
-    if (!restriction || restriction.includes(locale)) out.add(ns);
-  }
-  return out;
-}
-
-function pickAllowedSource(source, allowedNs) {
-  const out = {};
-  for (const k of Object.keys(source)) if (allowedNs.has(k)) out[k] = source[k];
-  return out;
-}
-
-function chunk(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-function parseLockYaml(raw) {
-  const lock = { version: 1, source: SOURCE_FILE, hashes: {} };
-  let inHashes = false;
-  for (const rawLine of raw.split("\n")) {
-    const line = rawLine.replace(/\r$/, "");
-    if (!line || /^\s*#/.test(line)) continue;
-    if (!inHashes) {
-      let m = line.match(/^version:\s*(\d+)\s*$/);
-      if (m) { lock.version = Number(m[1]); continue; }
-      m = line.match(/^source:\s*(.+?)\s*$/);
-      if (m) { lock.source = m[1]; continue; }
-      if (/^hashes:\s*$/.test(line)) { inHashes = true; continue; }
-    } else {
-      const m = line.match(/^\s{2}(\S+):\s*(\S+)\s*$/);
-      if (m) lock.hashes[m[1]] = m[2];
-      else if (!/^\s/.test(line)) inHashes = false;
-    }
-  }
-  return lock;
-}
-
-function dumpLockYaml(lock) {
-  let out = `version: ${lock.version}\nsource: ${lock.source}\nhashes:\n`;
-  for (const key of Object.keys(lock.hashes)) {
-    out += `  ${key}: ${lock.hashes[key]}\n`;
-  }
-  return out;
-}
-
 function discoverTargetLocales() {
   if (!existsSync(MESSAGES_DIR)) return [];
   const sourceBasename = SOURCE_FILE.split("/").pop();
@@ -390,64 +361,6 @@ function discoverTargetLocales() {
     .filter((f) => f.endsWith(".json") && f !== sourceBasename)
     .map((f) => f.slice(0, -5))
     .sort();
-}
-
-function flatten(obj, prefix = "", out = {}) {
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k;
-    if (v && typeof v === "object" && !Array.isArray(v)) flatten(v, key, out);
-    else out[key] = v;
-  }
-  return out;
-}
-
-function mergeOrdered(source, existing, translations) {
-  const out = {};
-  for (const k of Object.keys(source)) {
-    if (source[k] && typeof source[k] === "object" && !Array.isArray(source[k])) {
-      out[k] = mergeOrdered(source[k], existing[k] || {}, translationsPrefix(translations, k));
-    } else {
-      out[k] = pickTranslation(translations, existing, k);
-    }
-  }
-  return out;
-}
-
-function translationsPrefix(translations, prefix) {
-  const out = {};
-  const p = `${prefix}.`;
-  for (const k of Object.keys(translations)) {
-    if (k === prefix) out[""] = translations[k];
-    else if (k.startsWith(p)) out[k.slice(p.length)] = translations[k];
-  }
-  return out;
-}
-
-function pickTranslation(translations, existing, key) {
-  if (key in translations) return translations[key];
-  if (existing && key in existing) return existing[key];
-  return "";
-}
-
-function extractPlaceholders(s) {
-  // Only validates plain {name} placeholders. ICU plural/select syntax is
-  // preserved by the LLM per the system prompt; validating nested ICU
-  // structure with a regex is unreliable (matches differ across languages).
-  const set = new Set();
-  const re = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
-  let m;
-  while ((m = re.exec(s)) !== null) set.add(m[1]);
-  return set;
-}
-
-function setsEqual(a, b) {
-  if (a.size !== b.size) return false;
-  for (const v of a) if (!b.has(v)) return false;
-  return true;
-}
-
-function hash(s) {
-  return createHash("md5").update(String(s)).digest("hex");
 }
 
 function importLanguineLock(srcPath) {

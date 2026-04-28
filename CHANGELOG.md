@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-04-28
 
 ### Added
 
@@ -16,3 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate-limit handling (429 retry-after, up to 5 attempts).
 - Placeholder validation (`{name}`); retry on mismatch.
 - Languine lock file importer.
+- `--quiet` flag: suppresses per-locale/per-chunk progress lines. Ignored under `CI=*` so workflow logs stay verbose.
+- Parallel locale processing (concurrency 8) via a zero-dep `pLimit` — 10–30× speedup on backfills.
+- Pure helpers extracted to `bin/helpers.mjs`; `node:test` suite in `tests/` covers `flatten`, `mergeOrdered`, `extractPlaceholders`, `parseLockYaml`/`dumpLockYaml`, `pLimit`, and friends. `npm test` runs them.

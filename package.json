@@ -1,6 +1,6 @@
 {
   "name": "lingobot",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Self-hosted, AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. Drop-in replacement for Languine.",
   "type": "module",
   "bin": {
@@ -12,7 +12,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "translate": "node bin/translate.mjs"
+    "translate": "node bin/translate.mjs",
+    "test": "node --test 'tests/*.test.mjs'"
   },
   "keywords": [
     "i18n",
