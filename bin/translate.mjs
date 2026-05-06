@@ -49,6 +49,32 @@ import {
 } from "./helpers.mjs";
 
 // --- Constants ------------------------------------------------------------
+const HELP_TEXT = `autoi18n — AI-powered i18n translation bot
+
+Usage
+  npx autoi18n [flags]
+
+Flags
+  --check                     CI gate: exit 1 if lock != source. No AI call.
+  --dry-run                   Show plan, no AI call, no writes.
+  --quiet                     Suppress per-locale progress (auto-disabled in CI).
+  --locales=de,fr             Restrict run to specific locales.
+  --model=<id>                Override the configured model (default: claude-haiku-4-5).
+  --source=<path>             Override config.source (default: messages/en.json).
+  --messages-dir=<path>       Override config.messagesDir (default: messages).
+  --lock-file=<path>          Override config.lockFile (default: translate.lock).
+  --config=<path>             Custom config file path (default: translate.config.json).
+  --import-languine[=<path>]  Seed our lock file from a languine.lock and exit.
+  --summary-path=<path>       Where to write the markdown summary.
+  -v, --version               Print version and exit.
+  -h, --help                  Print this help and exit.
+
+Environment
+  ANTHROPIC_API_KEY           Required for real runs. Not needed for --check or --dry-run.
+
+Docs
+  https://github.com/ffcabbar/autoi18n
+`;
 const CHUNK_SIZE = 200;
 const RATE_LIMIT_MAX_RETRIES = 5;
 const LOCALE_CONCURRENCY = 8;
@@ -66,6 +92,18 @@ const LOCALE_DISPLAY = new Intl.DisplayNames(["en"], { type: "language" });
 // --- CLI ------------------------------------------------------------------
 const args = parseArgs(process.argv.slice(2));
 const CWD = process.cwd();
+
+if (args.version || args.v) {
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  console.log(pkg.version);
+  process.exit(0);
+}
+
+if (args.help || args.h) {
+  console.log(HELP_TEXT);
+  process.exit(0);
+}
+
 const CONFIG_PATH = resolvePath(args.config || "translate.config.json");
 
 const config = loadConfig(CONFIG_PATH);
