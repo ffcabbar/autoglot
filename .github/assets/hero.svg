@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a0b2e"/>
+      <stop offset="50%" stop-color="#2e1065"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <circle cx="640" cy="320" r="400" fill="url(#glow)"/>
+
+  <!-- Globe + translate icon -->
+  <g transform="translate(440 280)" fill="none" stroke="url(#accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="40" cy="40" r="60" stroke="#a78bfa"/>
+    <path d="M -20 40 H 100" stroke="#a78bfa"/>
+    <path d="M 40 -20 C 12 12, 12 68, 40 100" stroke="#a78bfa"/>
+    <path d="M 40 -20 C 68 12, 68 68, 40 100" stroke="#a78bfa"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="580" y="350" fill="#fff" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="700" font-size="120" letter-spacing="-4">autoi18n</text>
+
+  <!-- Tagline -->
+  <text x="580" y="410" fill="#cbd5e1" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="400" font-size="28" letter-spacing="0">AI translation bot for your i18n JSON.</text>
+  <text x="580" y="450" fill="#94a3b8" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="400" font-size="22">MIT &middot; single-file &middot; your API key</text>
+
+  <!-- Bottom accent strip -->
+  <rect x="0" y="630" width="1280" height="10" fill="url(#accent)"/>
+</svg>
