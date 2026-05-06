@@ -1,6 +1,6 @@
 # Distribution playbook
 
-Everything you need to know about publishing `lingobot` to the world.
+Everything you need to know about publishing `autoi18n` to the world.
 
 ## The 4 levels of "bot"
 
@@ -19,12 +19,12 @@ Zero setup, zero work. This is what `action.yml` does today.
 Edit the `git config` lines in `action.yml`:
 
 ```yaml
-git config user.name "lingobot"
-git config user.email "lingobot@users.noreply.github.com"
+git config user.name "autoi18n"
+git config user.email "autoi18n@users.noreply.github.com"
 ```
 
 PR shows:
-> **lingobot** committed `chore(i18n): update translations`
+> **autoi18n** committed `chore(i18n): update translations`
 
 But it's a "fake" author — no real GitHub user, no avatar, no profile. Clicking the name 404s. String-only change.
 
@@ -33,13 +33,13 @@ But it's a "fake" author — no real GitHub user, no avatar, no profile. Clickin
 What Languine, Dependabot, Renovate, Vercel-bot do. Steps:
 
 1. github.com/settings/apps → "New GitHub App"
-2. Set name: `lingobot`, upload an avatar PNG, write description, set permissions: `contents: write`, `pull-requests: write`
+2. Set name: `autoi18n`, upload an avatar PNG, write description, set permissions: `contents: write`, `pull-requests: write`
 3. Get App ID + private key
 4. In the action, mint a JWT and exchange it for an installation token
 5. Users **install** the app on their repo (one-click via Marketplace)
 
 PR shows:
-> 🤖 **lingobot** committed `chore(i18n): update translations`
+> 🤖 **autoi18n** committed `chore(i18n): update translations`
 > *(orange "bot" badge, our avatar, clicking goes to the app's profile page)*
 
 This is a "real" bot. Comments and commits carry our brand. But:
@@ -59,7 +59,7 @@ Ship v0.1 with Level 1. The script already works. After the first ~100 users, if
 
 This isn't one product, it's three things in three places.
 
-### 1. GitHub repo — `github.com/ffcabbar/lingobot`
+### 1. GitHub repo — `github.com/ffcabbar/autoi18n`
 
 - Source code
 - README, issues, PRs
@@ -67,15 +67,15 @@ This isn't one product, it's three things in three places.
 - Without this, nothing else works
 - **Action:** `git push` + make repo public
 
-### 2. npm registry — `npmjs.com/package/lingobot`
+### 2. npm registry — `npmjs.com/package/autoi18n`
 
-- Where `npm install lingobot` and `npx lingobot` resolve to
+- Where `npm install autoi18n` and `npx autoi18n` resolve to
 - Separate from the repo (confusing but true)
 - **Action:** `npm login`, then `npm publish --access public`
 - Free
 - Automate with a GitHub Action on release (changesets, release-please, etc.) once releases are happening regularly
 
-### 3. GitHub Marketplace — `github.com/marketplace/actions/lingobot`
+### 3. GitHub Marketplace — `github.com/marketplace/actions/autoi18n`
 
 - Discoverable storefront for the composite Action
 - "Browse listed actions" pulls from here
@@ -87,7 +87,7 @@ This isn't one product, it's three things in three places.
   5. Pick category (DevOps / Code Quality), accept terms, publish
 - Free, spam review takes 1–2 days for legit projects
 
-**Important:** the Action works as `ffcabbar/lingobot@v1` whether it's listed on Marketplace or not. Marketplace is just a vitrin — gets you more traffic.
+**Important:** the Action works as `ffcabbar/autoi18n@v1` whether it's listed on Marketplace or not. Marketplace is just a vitrin — gets you more traffic.
 
 ## Sponsorship — picking the right channel
 
@@ -164,14 +164,14 @@ Detected 1 new key in messages/en.json.
 
 Avatar: GitHub Actions rabbit. Author: `github-actions[bot]`. Style: minimal.
 
-When the product is proven and we upgrade to Level 3, the same comment shows the lingobot avatar with the orange `[bot]` badge, brand colors, and a footer: `_powered by [lingobot](https://github.com/ffcabbar/lingobot)_`. But that day is not today.
+When the product is proven and we upgrade to Level 3, the same comment shows the autoi18n avatar with the orange `[bot]` badge, brand colors, and a footer: `_powered by [autoi18n](https://github.com/ffcabbar/autoi18n)_`. But that day is not today.
 
 ## Step-by-step: v0.1 release
 
-1. Pick name (done — `lingobot`)
-2. `git push -u origin main` to `github.com/ffcabbar/lingobot` (public)
+1. Pick name (done — `autoi18n`)
+2. `git push -u origin main` to `github.com/ffcabbar/autoi18n` (public)
 3. `npm login` once
-4. `npm publish --access public` (publishes `lingobot@0.0.0`)
+4. `npm publish --access public` (publishes `autoi18n@0.0.0`)
 5. Bump to `0.1.0`, tag `v0.1.0`, push tag
 6. Cut a v0.1.0 release on GitHub → check "Publish to Marketplace"
 7. Set up GitHub Sponsors profile, verify `.github/FUNDING.yml` shows the Sponsor button

@@ -1,15 +1,15 @@
-# lingobot — agent context
+# autoi18n — agent context
 
 > Self-contained brief for any AI agent picking up this repo cold. Read this first, then the README.
 
 ## What this repo is
 
-`lingobot` is a self-hosted, AI-powered i18n translation bot. It diffs a source locale file (`messages/en.json`) against a YAML lock file on every push, sends only changed/new keys to Anthropic Claude, and writes translated `<locale>.json` files back. Drop-in replacement for [Languine](https://languine.ai).
+`autoi18n` is a self-hosted, AI-powered i18n translation bot. It diffs a source locale file (`messages/en.json`) against a YAML lock file on every push, sends only changed/new keys to Anthropic Claude, and writes translated `<locale>.json` files back. Drop-in replacement for [Languine](https://languine.ai).
 
 It ships as **two artifacts from one repo**:
 
-1. **CLI / npm package** (`npx lingobot`) — works locally and in any CI.
-2. **GitHub Action** (`ffcabbar/lingobot@v1`) — wraps the CLI plus a `git commit / push / gh pr comment` ritual.
+1. **CLI / npm package** (`npx autoi18n`) — works locally and in any CI.
+2. **GitHub Action** (`ffcabbar/autoi18n@v1`) — wraps the CLI plus a `git commit / push / gh pr comment` ritual.
 
 There is no SaaS, no hosted dashboard, no backend. Just a 508-line zero-deps Node script + a composite Action.
 
@@ -28,12 +28,12 @@ The internal script went through ~20 fix commits before it was stable. Highlight
 ## Repo layout
 
 ```
-lingobot/
+autoi18n/
 ├── bin/translate.mjs      # the entire engine (508 lines, zero deps)
 ├── action.yml             # composite GitHub Action wrapping the CLI
 ├── examples/basic/        # working demo: en.json + es/de.json + workflow + config
 ├── docs/distribution.md   # publishing playbook (npm + Marketplace + Sponsors + bot levels)
-├── package.json           # name: "lingobot", bin: { lingobot: ./bin/translate.mjs }
+├── package.json           # name: "autoi18n", bin: { autoi18n: ./bin/translate.mjs }
 ├── README.md              # public pitch + quickstart + flag reference
 ├── CLAUDE.md              # this file
 ├── CHANGELOG.md
@@ -85,9 +85,9 @@ There are **no tests yet** and **no build step**. The script runs straight from 
 
 ### Pending — pick up in this order
 
-1. **Push to GitHub.** Create `github.com/ffcabbar/lingobot` (public), `git remote add origin`, `git push -u origin main`.
-2. **`npm publish`.** `npm login`, then `npm publish --access public` from the repo root. The `name` field is `lingobot`, version starts at `0.0.0`.
-3. **Tag `v0.1.0`** so the action ref `ffcabbar/lingobot@v0.1.0` resolves. Also create a `v1` floating tag pointing at it (convention).
+1. **Push to GitHub.** Create `github.com/ffcabbar/autoi18n` (public), `git remote add origin`, `git push -u origin main`.
+2. **`npm publish`.** `npm login`, then `npm publish --access public` from the repo root. The `name` field is `autoi18n`, version starts at `0.0.0`.
+3. **Tag `v0.1.0`** so the action ref `ffcabbar/autoi18n@v0.1.0` resolves. Also create a `v1` floating tag pointing at it (convention).
 4. **List on GitHub Marketplace.** Repo → Releases → Draft → check "Publish this Action to the GitHub Marketplace" → category: DevOps. Reviewer takes 1–2 days.
 5. **Try it on a real test repo.** Create a tiny scratch repo, drop `examples/basic/` content into root, set `ANTHROPIC_API_KEY` secret, push. Watch the bot commit translations. This is the demo.
 6. **Add tests.** Golden-file tests on the pure helpers in `bin/translate.mjs`: `flatten`, `mergeOrdered`, `extractPlaceholders`, `parseLockYaml`, `dumpLockYaml`. None need network. ~1–2 hours of work; do this before public users file issues.
@@ -103,7 +103,7 @@ There are **no tests yet** and **no build step**. The script runs straight from 
 
 ## Naming conventions
 
-- **`lingobot`** is the package name (npm), repo name, and Action ref.
+- **`autoi18n`** is the package name (npm), repo name, and Action ref.
 - **Bot identity** in v0.1 is the default `github-actions[bot]` (no work required). Don't fake the git author name to look like a real bot — it confuses people who click and find a 404.
 
 ## Branding
@@ -116,9 +116,9 @@ Three separate places this lives:
 
 | Channel | URL | What it does |
 |---|---|---|
-| **GitHub repo** | `github.com/ffcabbar/lingobot` | Source of truth, issues, README |
-| **npm registry** | `npmjs.com/package/lingobot` | `npm install` / `npx lingobot` |
-| **GitHub Marketplace** | `github.com/marketplace/actions/lingobot` | Discoverability for the Action |
+| **GitHub repo** | `github.com/ffcabbar/autoi18n` | Source of truth, issues, README |
+| **npm registry** | `npmjs.com/package/autoi18n` | `npm install` / `npx autoi18n` |
+| **GitHub Marketplace** | `github.com/marketplace/actions/autoi18n` | Discoverability for the Action |
 
 Repo is mandatory. npm is needed for the CLI to work via `npx`. Marketplace is optional but worth doing — free traffic. Full playbook in `docs/distribution.md`.
 

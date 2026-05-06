@@ -1,10 +1,10 @@
 {
-  "name": "lingobot",
+  "name": "autoi18n",
   "version": "0.1.0",
-  "description": "Self-hosted, AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. Drop-in replacement for Languine.",
+  "description": "AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. MIT alternative to Languine, Lokalise, and Crowdin.",
   "type": "module",
   "bin": {
-    "lingobot": "./bin/translate.mjs"
+    "autoi18n": "./bin/translate.mjs"
   },
   "files": [
     "bin",
@@ -18,14 +18,50 @@
   "keywords": [
     "i18n",
     "l10n",
+    "localization",
     "translation",
+    "auto-translate",
+    "automatic-translation",
+    "ai-translation",
     "anthropic",
     "claude",
+    "claude-haiku",
+    "claude-sonnet",
+    "github-action",
+    "github-actions",
+    "ci",
+    "cli",
+    "developer-tools",
+    "devtools",
+    "automation",
     "next-intl",
     "react-i18next",
-    "localization",
-    "languine"
+    "vue-i18n",
+    "i18next",
+    "languine",
+    "languine-alternative",
+    "lokalise-alternative",
+    "crowdin-alternative",
+    "phrase-alternative",
+    "transifex-alternative",
+    "translate-json",
+    "json-translation",
+    "messages",
+    "locale",
+    "locales",
+    "multilingual",
+    "open-source",
+    "mit"
   ],
+  "homepage": "https://github.com/ffcabbar/autoi18n",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ffcabbar/autoi18n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ffcabbar/autoi18n/issues"
+  },
+  "author": "ffcabbar",
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
