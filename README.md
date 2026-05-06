@@ -1,12 +1,66 @@
-# lingobot
+<!-- HERO BANNER
+  File:   .github/assets/hero.png
+  Size:   1280x640 (2:1) — also used as GitHub social card (Settings → Social preview)
+  Prompt: "A minimal, modern banner for an open-source dev tool called 'autoi18n'.
+           Centered wordmark in a clean geometric sans-serif (Inter / Geist), with
+           a small globe-and-translation glyph to the left. Background: subtle
+           purple-to-near-black diagonal gradient (#1a0b2e → #4c1d95). White text.
+           Tagline below the wordmark in a smaller weight: 'AI translation bot for
+           your i18n JSON. MIT, single-file, your API key.' Flat, no 3D, no AI
+           glow effects. Looks at home next to Vercel/Resend/Linear branding."
+-->
+<p align="center">
+  <img src=".github/assets/hero.svg" alt="autoi18n — AI-powered i18n translation bot" width="820">
+</p>
 
-> Self-hosted, AI-powered i18n translation bot. Edit `en.json`, push, and your other locale files appear translated in a bot commit. Drop-in replacement for [Languine](https://languine.ai).
+<h1 align="center">autoi18n</h1>
+
+<p align="center">
+  <strong>AI-powered i18n translation bot.</strong> Edit <code>en.json</code>, push, and your other locale files appear translated in a bot commit.<br>
+  MIT alternative to <a href="https://languine.ai">Languine</a>, Lokalise, and Crowdin.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/autoi18n"><img src="https://img.shields.io/npm/v/autoi18n.svg?color=8b5cf6&label=npm" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/autoi18n"><img src="https://img.shields.io/npm/dm/autoi18n.svg?color=8b5cf6" alt="downloads"></a>
+  <a href="https://github.com/ffcabbar/autoi18n/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/autoi18n.svg?color=8b5cf6" alt="license MIT"></a>
+  <a href="https://github.com/marketplace/actions/autoi18n"><img src="https://img.shields.io/badge/marketplace-autoi18n-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Marketplace"></a>
+  <a href="https://github.com/ffcabbar/autoi18n/stargazers"><img src="https://img.shields.io/github/stars/ffcabbar/autoi18n?style=flat&color=8b5cf6" alt="stars"></a>
+  <a href="https://github.com/sponsors/ffcabbar"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-ec4899" alt="Sponsor"></a>
+</p>
+
+<p align="center">
+  <a href="#quickstart-github-action">Quickstart</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#vs-the-alternatives">vs. Languine / Lokalise</a> ·
+  <a href="#configuration">Config</a> ·
+  <a href="#models-and-cost">Cost</a> ·
+  <a href="#faq">FAQ</a>
+</p>
+
+---
+
+<!-- DEMO GIF — record after the first real PR run.
+     File: .github/assets/demo.gif (1280x720, ≤ 8 MB, ≤ 30 s)
+     Drop the file in and uncomment the <p> tag below.
+<p align="center">
+  <img src=".github/assets/demo.gif" alt="autoi18n in action: edit en.json, push, watch the bot translate and commit." width="820">
+</p>
+-->
+
+## Why
 
 - **Zero npm dependencies.** Single Node 20+ script. Auditable in 30 minutes.
 - **Incremental.** A YAML lock file fingerprints every English string; only changed/new keys are sent to the LLM.
-- **Free, except for the API key.** No SaaS, no rate limits, no quota. You pay Anthropic directly — typical PR costs under a cent.
+- **Free, except for the API key.** No SaaS, no rate limits, no quota. You pay Anthropic directly — typical PR costs **under a cent**.
 - **CI-native.** Ships as a GitHub Action. The bot commits the translated JSON back to your branch and posts a cost report on the PR.
-- **Framework-agnostic.** Works with `next-intl`, `react-i18next`, `vue-i18n`, anything that reads a flat-or-nested JSON message catalog.
+- **Framework-agnostic.** Works with `next-intl`, `react-i18next`, `vue-i18n`, `i18next`, anything that reads a flat-or-nested JSON message catalog.
+
+<!-- PR COMMENT — placeholder mockup. Replace with a real screenshot once you have one.
+     File: .github/assets/pr-comment.png (1024x600). Until you do, the .svg mockup is fine. -->
+<p align="center">
+  <img src=".github/assets/pr-comment.svg" alt="The bot posts a cost summary as a PR comment" width="720">
+</p>
 
 ## Quickstart (GitHub Action)
 
@@ -32,12 +86,12 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: ffcabbar/lingobot@v1
+      - uses: ffcabbar/autoi18n@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-That's it. Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json` in your repo, and create one empty `messages/<locale>.json` per language you want. On the next push, the bot will:
+Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json` in your repo, and create one empty `messages/<locale>.json` per language. On the next push, the bot will:
 
 1. Diff `en.json` against the lock file (`md5` per key).
 2. Send only changed/new keys to Claude.
@@ -47,15 +101,30 @@ That's it. Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.jso
 ## Quickstart (CLI, no GitHub)
 
 ```bash
-npm install -D lingobot
+npm install -D autoi18n
 echo '{ "greeting": "Hello, world!" }' > messages/en.json
 echo '{}' > messages/es.json
 echo '{}' > messages/de.json
 
-ANTHROPIC_API_KEY=sk-ant-... npx lingobot
+ANTHROPIC_API_KEY=sk-ant-... npx autoi18n
 ```
 
 After the first run, `messages/es.json` and `messages/de.json` are populated, and `translate.lock` records what was translated.
+
+## vs. the alternatives
+
+| | **autoi18n** | Languine | Lokalise / Crowdin / Phrase | i18n-ai-translate |
+|---|:---:|:---:|:---:|:---:|
+| License | **MIT** | AGPL-3.0 | Proprietary | MIT |
+| SaaS account required | **No** | No (CLI) | **Yes** | No |
+| Hosted dashboard | None | Optional | Required | None |
+| GitHub Action | **Yes (built-in)** | Yes | Plugin | No |
+| Bot commits the diff back | **Yes** | Yes | Manual | No |
+| Cost per ~1k-key PR | **<$0.01** | <$0.01 | $5–$50 | <$0.01 |
+| Dependencies | **0** | many | n/a (SaaS) | several |
+| Multi-provider | v0.2 | Yes | n/a | Yes |
+| Formats | JSON | 15+ | 15+ | JSON |
+| Self-hosted | **Yes** | Yes | No | Yes |
 
 ## Configuration
 
@@ -101,6 +170,8 @@ After the first run, `messages/es.json` and `messages/de.json` are populated, an
 --lock-file=<path>       Override config.lockFile.
 --config=<path>          Custom config file path.
 --import-languine[=path] Seed our lock file from a `languine.lock`.
+-v, --version            Print version and exit.
+-h, --help               Print help and exit.
 ```
 
 ## Models and cost
@@ -116,13 +187,25 @@ Typical PR (1–3 changed keys × 30 locales) costs under a cent on Haiku. A fir
 ## Migrating from Languine
 
 ```bash
-npx lingobot --import-languine=languine.lock
+npx autoi18n --import-languine=languine.lock
 rm languine.json languine.lock
 ```
 
 Then replace your Languine workflow with the one above. The lock file will be in sync — no re-translation, no re-cost.
 
 ## How it works
+
+<!-- ARCHITECTURE DIAGRAM (optional)
+  File:   .github/assets/how-it-works.svg
+  Prompt: "A simple horizontal flowchart with 5 boxes connected by arrows:
+           [en.json edit] → [diff vs lock file] → [Anthropic API: only changed keys]
+           → [merge into <locale>.json files] → [bot commit + PR comment].
+           Monochrome dark theme, purple accent (#8b5cf6). Looks like a Linear
+           or Stripe docs diagram. Inter font."
+-->
+<p align="center">
+  <img src=".github/assets/how-it-works.svg" alt="autoi18n architecture: diff → translate → merge → commit" width="1100">
+</p>
 
 1. **Flatten** your source JSON to dotted keys: `{ "checkout.cta": "Pay now" }`.
 2. **Diff** each value's md5 against the lock file → `new`, `changed`, `orphan` (deleted) keys.
@@ -133,14 +216,91 @@ Then replace your Languine workflow with the one above. The lock file will be in
 
 In CI, the action then commits the diff and posts the cost summary on the PR.
 
-## Why a self-hosted bot?
+## FAQ
 
-Hosted i18n SaaS tools either charge per-key, throttle your throughput, or both. This is a 500-line script. You own the bot, the lock file, the JSON, and the API key. There is nothing to outgrow.
+<details>
+<summary><strong>Does it work with my framework?</strong></summary>
+
+If your i18n library reads JSON files (`next-intl`, `react-i18next`, `vue-i18n`, `i18next`, `formatjs`, `lingui`, `react-intl`, ...), yes. autoi18n is format-agnostic about how the JSON is structured.
+
+</details>
+
+<details>
+<summary><strong>What about ICU plurals, dates, gender?</strong></summary>
+
+ICU syntax (`{count, plural, one {# day} other {# days}}`) is preserved by the system prompt to Claude. The placeholder validator covers `{name}` tokens; for ICU we rely on the model — in practice Haiku 4.5 handles it correctly. If you spot a regression, open an issue.
+
+</details>
+
+<details>
+<summary><strong>Why JSON only?</strong></summary>
+
+JSON covers ~95% of JS app i18n. Adding YAML / `.strings` / Android XML triples the test surface. We'd rather do JSON well than 15 formats badly. v0.3+ if there's demand.
+
+</details>
+
+<details>
+<summary><strong>Why not OpenAI / Gemini?</strong></summary>
+
+Coming in v0.2. Anthropic's tool use is the most stable for structured output today, which is why v0.1 ships Anthropic-only. Each provider's tool semantics differ subtly; we'd rather wait until we have tests for all three.
+
+</details>
+
+<details>
+<summary><strong>Is the bot a "real" GitHub bot with an avatar?</strong></summary>
+
+Not yet. v0.1 commits as `github-actions[bot]` (the default rabbit avatar). A real GitHub App with the autoi18n logo is on the roadmap — see `docs/distribution.md` for the four levels of bot identity and why we chose Level 1 to start.
+
+</details>
+
+<details>
+<summary><strong>Can I run it without GitHub?</strong></summary>
+
+Yes. `npx autoi18n` works in any CI (GitLab, CircleCI, Jenkins, your laptop). The GitHub Action is just a thin wrapper that adds the `git commit` + `gh pr comment` ritual.
+
+</details>
+
+<details>
+<summary><strong>How do I keep brand names from being translated?</strong></summary>
+
+Add them to `glossary` in `translate.config.json`. They'll be passed to Claude with explicit instruction to leave them verbatim.
+
+</details>
+
+## Roadmap
+
+- [x] **v0.1** — Anthropic, JSON, GitHub Action, Languine importer, parallel locales, lock file
+- [ ] **v0.2** — Multi-provider (OpenAI, Gemini), provider-fallback chain
+- [ ] **v0.3** — YAML / `.strings` / Android XML formats (gated on demand)
+- [ ] **v0.4** — Hosted GitHub App (real bot avatar, one-click install) — paid tier, OSS still first-class
+
+See [`RELEASE_PLAN.md`](./RELEASE_PLAN.md) for the full plan.
+
+## Contributing
+
+Issues, PRs, and bug reports welcome. The codebase is intentionally tiny:
+
+- `bin/translate.mjs` (≈ 500 lines) — the entire engine
+- `bin/helpers.mjs` — pure helpers
+- `tests/helpers.test.mjs` — `node:test` suite, runs offline
+
+```bash
+git clone https://github.com/ffcabbar/autoi18n
+cd autoi18n
+npm test                                    # offline
+cd examples/basic && node ../../bin/translate.mjs --dry-run
+```
 
 ## Sponsor
 
-If `lingobot` saves you the cost of a Languine subscription, consider [sponsoring on GitHub](https://github.com/sponsors/ffcabbar). The whole project is one person's evenings.
+If `autoi18n` saves you the cost of a Languine subscription, consider [sponsoring on GitHub](https://github.com/sponsors/ffcabbar). The whole project is one person's evenings.
 
 ## License
 
-MIT.
+[MIT](./LICENSE) © ffcabbar
+
+---
+
+<p align="center">
+  <sub>If autoi18n helped you, a ⭐ on the repo is the best way to say thanks.</sub>
+</p>
