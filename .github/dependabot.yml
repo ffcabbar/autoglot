@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # GitHub Actions used by our composite action and CI.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
