@@ -19,3 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--quiet` flag: suppresses per-locale/per-chunk progress lines. Ignored under `CI=*` so workflow logs stay verbose.
 - Parallel locale processing (concurrency 8) via a zero-dep `pLimit` — 10–30× speedup on backfills.
 - Pure helpers extracted to `bin/helpers.mjs`; `node:test` suite in `tests/` covers `flatten`, `mergeOrdered`, `extractPlaceholders`, `parseLockYaml`/`dumpLockYaml`, `pLimit`, and friends. `npm test` runs them.
+- `--version` / `-v` and `--help` / `-h` flags.
+- Renamed from `lingobot` → `autoi18n` (project-wide).
+- Multi-OS / multi-Node CI matrix (`.github/workflows/ci.yml`).
+- Community files: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, issue templates, PR template, dependabot config.
+- Placeholder SVG assets (`hero.svg`, `logo.svg`, `how-it-works.svg`, `pr-comment.svg`) so the README renders before real images are produced.
