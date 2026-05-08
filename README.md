@@ -48,6 +48,12 @@
 </p>
 -->
 
+## What it is (and isn't)
+
+autoi18n **fills in your missing locale files**. You write `messages/en.json`. autoi18n writes `messages/es.json`, `messages/de.json`, etc. by calling Claude on every push.
+
+It is **not** a runtime i18n library. You still need [`next-intl`](https://next-intl.dev/), [`react-i18next`](https://react.i18next.com/), [`vue-i18n`](https://vue-i18n.intlify.dev/), or similar to read those JSON files in your app and resolve `t("...")` calls. autoi18n is the translator; your i18n library is the reader.
+
 ## Why
 
 - **Zero npm dependencies.** Single Node 20+ script. Auditable in 30 minutes.
