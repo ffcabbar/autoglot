@@ -26,7 +26,7 @@
   </g>
 
   <!-- Wordmark -->
-  <text x="580" y="350" fill="#fff" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="700" font-size="120" letter-spacing="-4">autoi18n</text>
+  <text x="580" y="350" fill="#fff" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="700" font-size="120" letter-spacing="-4">autoglot</text>
 
   <!-- Tagline -->
   <text x="580" y="410" fill="#cbd5e1" font-family="Inter, -apple-system, system-ui, sans-serif" font-weight="400" font-size="28" letter-spacing="0">AI translation bot for your i18n JSON.</text>

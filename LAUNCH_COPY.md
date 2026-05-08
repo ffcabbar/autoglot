@@ -9,7 +9,7 @@
 **Title** (under 80 chars):
 
 ```
-Show HN: autoi18n – AI translation bot for your i18n JSON, MIT, single-file
+Show HN: autoglot – AI translation bot for your i18n JSON, MIT, single-file
 ```
 
 Don't start with "I built" or "introducing." Start with "Show HN:".
@@ -17,7 +17,7 @@ Don't start with "I built" or "introducing." Start with "Show HN:".
 **Body** (paste in the form):
 
 ```
-autoi18n is a self-hosted i18n translation bot. You edit messages/en.json, push,
+autoglot is a self-hosted i18n translation bot. You edit messages/en.json, push,
 and your other locale files appear translated in a bot commit on the same PR.
 
 The whole thing is one Node script (~500 lines, zero dependencies) plus a thin
@@ -30,9 +30,9 @@ was simple: Languine is AGPL with a paid commercial license, and I wanted MIT,
 no SaaS, no signup, my API key. The Action commits the diff back and posts a
 cost summary on the PR — that's the whole product.
 
-Repo: https://github.com/ffcabbar/autoi18n
-Marketplace: https://github.com/marketplace/actions/autoi18n
-npm: https://www.npmjs.com/package/autoi18n
+Repo: https://github.com/ffcabbar/autoglot
+Marketplace: https://github.com/marketplace/actions/autoglot
+npm: https://www.npmjs.com/package/autoglot
 
 Caveats:
 - v0.1 is Anthropic-only (provider abstraction is internal; OpenAI/Gemini in v0.2)
@@ -75,7 +75,7 @@ Happy to answer anything.
 
 **Title:**
 ```
-I built an open-source MIT alternative to Languine — autoi18n diffs your en.json and translates only what changed
+I built an open-source MIT alternative to Languine — autoglot diffs your en.json and translates only what changed
 ```
 
 **Body:**
@@ -95,7 +95,7 @@ It's MIT licensed (vs Languine's AGPL+commercial-license model), no SaaS,
 your own Anthropic API key. Works with next-intl, react-i18next, vue-i18n,
 i18next — anything that reads JSON.
 
-Repo: https://github.com/ffcabbar/autoi18n
+Repo: https://github.com/ffcabbar/autoglot
 
 Would love feedback, issues, or PRs. Especially curious how it handles
 non-Latin scripts in your projects.
@@ -105,7 +105,7 @@ non-Latin scripts in your projects.
 
 **Title:**
 ```
-[Show] autoi18n – self-hosted, MIT, single-file alternative to Languine for AI i18n translation
+[Show] autoglot – self-hosted, MIT, single-file alternative to Languine for AI i18n translation
 ```
 
 **Body** — same as r/webdev, slightly more technical. Add at the end:
@@ -136,7 +136,7 @@ jobs:
     permissions: { contents: write, pull-requests: write }
     steps:
       - uses: actions/checkout@v4
-      - uses: ffcabbar/autoi18n@v1
+      - uses: ffcabbar/autoglot@v1
         with: { anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }} }
 ```
 
@@ -145,7 +145,7 @@ posts a cost summary on the PR. Costs ~$0.001 per typical PR on Haiku.
 
 MIT, single-file (~500 lines), zero deps, no SaaS.
 
-Repo: https://github.com/ffcabbar/autoi18n
+Repo: https://github.com/ffcabbar/autoglot
 ```
 
 ### r/reactjs
@@ -167,7 +167,7 @@ I replaced Languine with a 500-line script. Here's what I learned about LLM i18n
 
 ```markdown
 A few months ago I migrated a Next.js monorepo from Languine to a homegrown
-script. This week I open-sourced it as autoi18n. Here's what changed, and
+script. This week I open-sourced it as autoglot. Here's what changed, and
 what surprised me along the way.
 
 ## The setup
@@ -229,7 +229,7 @@ and write the locale files without the orphan keys. Zero cost.
 
 ## Comparison
 
-| | autoi18n | Languine | Lokalise |
+| | autoglot | Languine | Lokalise |
 |---|---|---|---|
 | License | MIT | AGPL-3 | Proprietary |
 | Cost per PR | <$0.01 | <$0.01 | $5–$50 |
@@ -240,11 +240,11 @@ and write the locale files without the orphan keys. Zero cost.
 ## Try it
 
 ```bash
-npm install -D autoi18n
-npx autoi18n --dry-run
+npm install -D autoglot
+npx autoglot --dry-run
 ```
 
-Repo: https://github.com/ffcabbar/autoi18n
+Repo: https://github.com/ffcabbar/autoglot
 
 Issues and PRs welcome.
 ```
@@ -265,11 +265,11 @@ AI translation bot for your i18n JSON. MIT, single-file, your API key.
 **Listing description** (Markdown, ~500 words):
 
 ```markdown
-**autoi18n** is a zero-dependency, MIT-licensed GitHub Action that translates your
+**autoglot** is a zero-dependency, MIT-licensed GitHub Action that translates your
 i18n JSON files using Claude. Edit `messages/en.json`, push, and the bot commits
 translated `<locale>.json` files back to the same PR with a cost summary.
 
-## Why teams switch to autoi18n
+## Why teams switch to autoglot
 
 - **MIT licensed.** No AGPL compliance overhead, no per-key SaaS pricing.
 - **Single-file engine.** ~500 lines, zero npm dependencies. Auditable in 30 minutes.
@@ -291,7 +291,7 @@ jobs:
     permissions: { contents: write, pull-requests: write }
     steps:
       - uses: actions/checkout@v4
-      - uses: ffcabbar/autoi18n@v1
+      - uses: ffcabbar/autoglot@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
@@ -315,15 +315,15 @@ No subscription, no per-key fees, no SaaS markup.
 ## Migration from Languine
 
 ```bash
-npx autoi18n --import-languine=languine.lock
+npx autoglot --import-languine=languine.lock
 ```
 
 The lock file is converted in place. No re-translation, no re-cost.
 
 ## Source & support
 
-- Repo: https://github.com/ffcabbar/autoi18n
-- Issues: https://github.com/ffcabbar/autoi18n/issues
+- Repo: https://github.com/ffcabbar/autoglot
+- Issues: https://github.com/ffcabbar/autoglot/issues
 - Sponsor: https://github.com/sponsors/ffcabbar
 - License: MIT
 ```
@@ -341,7 +341,7 @@ Build the open-source i18n bot that replaces $50/mo SaaS subscriptions.
 
 **Short bio:**
 ```
-I maintain autoi18n (MIT) — a single-file, AI-powered i18n translation bot
+I maintain autoglot (MIT) — a single-file, AI-powered i18n translation bot
 that's a self-hosted alternative to Languine, Lokalise, and Crowdin. Sponsorships
 fund evenings and weekends spent shipping new providers, formats, and the upcoming
 hosted GitHub App.
@@ -355,7 +355,7 @@ hosted GitHub App.
 | **Sponsor** | $25 | Above + your logo in the README "Backed by" section. |
 | **Pro** | $99 | Above + priority on issues you care about + a 30-min monthly call to discuss roadmap or pair-debug your i18n setup. |
 
-**Goal:** "Reach $500/month so I can dedicate one full day per week to autoi18n."
+**Goal:** "Reach $500/month so I can dedicate one full day per week to autoglot."
 
 ---
 
@@ -386,7 +386,7 @@ i replaced our Languine subscription with a 500-line script.
 it diffs en.json on every push, sends only the changed keys to Claude, and
 commits the translated files back. costs ~$0.001 per PR.
 
-today i'm open-sourcing it as autoi18n. MIT, single-file, no SaaS.
+today i'm open-sourcing it as autoglot. MIT, single-file, no SaaS.
 
 [attach pr-comment screenshot]
 ```
@@ -415,9 +415,9 @@ non-obvious things i learned along the way:
 **Tweet 4:**
 ```
 works with next-intl, react-i18next, vue-i18n, i18next, anything that reads
-JSON. ships as a CLI (`npx autoi18n`) or a GitHub Action.
+JSON. ships as a CLI (`npx autoglot`) or a GitHub Action.
 
-repo: github.com/ffcabbar/autoi18n
+repo: github.com/ffcabbar/autoglot
 docs + comparison vs Languine/Lokalise/Crowdin in the README
 
 would love issues / PRs / star ⭐
@@ -428,14 +428,14 @@ would love issues / PRs / star ⭐
 ## 8. Stage 2 / Stage 3 outreach (when you launch the paid GitHub App)
 
 A short email template for cold outreach to companies you see using
-`uses: ffcabbar/autoi18n` in their public CI:
+`uses: ffcabbar/autoglot` in their public CI:
 
 ```
-Subject: autoi18n Pro — heads up
+Subject: autoglot Pro — heads up
 
 Hi [name],
 
-Saw your team using autoi18n in [repo] — thanks for adopting it.
+Saw your team using autoglot in [repo] — thanks for adopting it.
 
 I just launched a Pro plan on GitHub Marketplace ($9/repo/month):
 - Glossary auto-mining (the bot reads your past PRs and learns your brand
@@ -448,7 +448,7 @@ I just launched a Pro plan on GitHub Marketplace ($9/repo/month):
 If your i18n volume is non-trivial, the review portal alone usually pays for
 itself the first month. 14-day free trial, install with one click:
 
-  https://github.com/marketplace/autoi18n
+  https://github.com/marketplace/autoglot
 
 Happy to give you the first 60 days free if you'd like to try it. Just reply.
 
@@ -464,14 +464,14 @@ Happy to give you the first 60 days free if you'd like to try it. Just reply.
 
 [![logo1](path-to-logo.png)](url) &nbsp; [![logo2](path-to-logo.png)](url) &nbsp; ...
 
-> "We replaced Languine with autoi18n in 20 minutes. Same quality, MIT, zero per-key fees." — Engineer, Some Company
+> "We replaced Languine with autoglot in 20 minutes. Same quality, MIT, zero per-key fees." — Engineer, Some Company
 
 > "The PR cost summary alone justified the switch." — Tech Lead, Another Company
 ```
 
 Find users via GitHub code search:
 ```
-https://github.com/search?q=uses%3A+ffcabbar%2Fautoi18n&type=code
+https://github.com/search?q=uses%3A+ffcabbar%2Fautoglot&type=code
 ```
 
 DM each one, ask permission, add their logo + a one-line testimonial.

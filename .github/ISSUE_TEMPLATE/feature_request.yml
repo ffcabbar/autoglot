@@ -6,7 +6,7 @@ body:
     id: problem
     attributes:
       label: What problem are you trying to solve?
-      placeholder: "When I do X, autoi18n does Y, but I want it to..."
+      placeholder: "When I do X, autoglot does Y, but I want it to..."
     validations:
       required: true
   - type: textarea

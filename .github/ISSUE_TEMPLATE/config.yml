@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Question or general help
-    url: https://github.com/ffcabbar/autoi18n/discussions
+    url: https://github.com/ffcabbar/autoglot/discussions
     about: Use Discussions for questions, ideas, and show-and-tell.
   - name: Migrating from Languine
-    url: https://github.com/ffcabbar/autoi18n#migrating-from-languine
+    url: https://github.com/ffcabbar/autoglot#migrating-from-languine
     about: Read the migration guide first; it covers 90% of cases.

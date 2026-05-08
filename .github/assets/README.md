@@ -15,14 +15,14 @@ All assets should look at home next to **Linear / Vercel / Resend / Stripe** bra
 - **Size:** 1280 × 640 (2:1 ratio)
 - **Used in:** top of README, GitHub repo Settings → Social preview
 - **Prompt:**
-  > A minimal, modern banner for an open-source dev tool called **autoi18n**. Centered wordmark in a clean geometric sans-serif (Inter / Geist), with a small globe-and-translation glyph to the left of the wordmark. Background: subtle diagonal gradient from `#1a0b2e` to `#4c1d95`. White text. Tagline below the wordmark in a smaller weight: *"AI translation bot for your i18n JSON. MIT, single-file, your API key."* Flat, no 3D, no AI glow effects.
+  > A minimal, modern banner for an open-source dev tool called **autoglot**. Centered wordmark in a clean geometric sans-serif (Inter / Geist), with a small globe-and-translation glyph to the left of the wordmark. Background: subtle diagonal gradient from `#1a0b2e` to `#4c1d95`. White text. Tagline below the wordmark in a smaller weight: *"AI translation bot for your i18n JSON. MIT, single-file, your API key."* Flat, no 3D, no AI glow effects.
 
 ## 2. `logo.png` — square logo / favicon / npm avatar
 
 - **Size:** 512 × 512
 - **Used in:** GitHub Action Marketplace card, npm avatar, favicon (downscale to 32×32)
 - **Prompt:**
-  > A square monochrome logo for **autoi18n**. A stylized globe with two arrows wrapping around it (translate symbol). Single color: `#8b5cf6` on a transparent background. Geometric, sharp, looks crisp at 32×32. No text. Inspired by Feather icons / Phosphor icons.
+  > A square monochrome logo for **autoglot**. A stylized globe with two arrows wrapping around it (translate symbol). Single color: `#8b5cf6` on a transparent background. Geometric, sharp, looks crisp at 32×32. No text. Inspired by Feather icons / Phosphor icons.
 
 ## 3. `demo.gif` — 30-second product demo
 

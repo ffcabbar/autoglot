@@ -7,13 +7,13 @@ body:
     attributes:
       label: What happened?
       description: Describe the bug. Include the command you ran, the output you got, and the output you expected.
-      placeholder: "I ran `npx autoi18n` and..."
+      placeholder: "I ran `npx autoglot` and..."
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: autoi18n version
+      label: autoglot version
       placeholder: "0.1.0"
     validations:
       required: true

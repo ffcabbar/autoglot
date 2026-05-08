@@ -1,12 +1,12 @@
-# Contributing to autoi18n
+# Contributing to autoglot
 
 Thanks for considering it. The codebase is intentionally tiny so PRs are easy to review.
 
 ## Quick start
 
 ```bash
-git clone https://github.com/ffcabbar/autoi18n
-cd autoi18n
+git clone https://github.com/ffcabbar/autoglot
+cd autoglot
 npm test                                                      # offline, ~100ms
 cd examples/basic && node ../../bin/translate.mjs --dry-run   # offline smoke test
 ```
@@ -40,7 +40,7 @@ For a real end-to-end test with the API, set `ANTHROPIC_API_KEY` and run `node b
 
 Use the issue templates. Always include:
 
-- autoi18n version (`npx autoi18n --version` once that flag exists, or check `package.json`)
+- autoglot version (`npx autoglot --version` once that flag exists, or check `package.json`)
 - Node version (`node -v`)
 - The exact command you ran and the output
 - Your `translate.config.json` (redact secrets)

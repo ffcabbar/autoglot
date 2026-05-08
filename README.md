@@ -1,7 +1,7 @@
 <!-- HERO BANNER
   File:   .github/assets/hero.png
   Size:   1280x640 (2:1) — also used as GitHub social card (Settings → Social preview)
-  Prompt: "A minimal, modern banner for an open-source dev tool called 'autoi18n'.
+  Prompt: "A minimal, modern banner for an open-source dev tool called 'autoglot'.
            Centered wordmark in a clean geometric sans-serif (Inter / Geist), with
            a small globe-and-translation glyph to the left. Background: subtle
            purple-to-near-black diagonal gradient (#1a0b2e → #4c1d95). White text.
@@ -10,10 +10,10 @@
            glow effects. Looks at home next to Vercel/Resend/Linear branding."
 -->
 <p align="center">
-  <img src=".github/assets/hero.svg" alt="autoi18n — AI-powered i18n translation bot" width="820">
+  <img src=".github/assets/hero.svg" alt="autoglot — AI-powered i18n translation bot" width="820">
 </p>
 
-<h1 align="center">autoi18n</h1>
+<h1 align="center">autoglot</h1>
 
 <p align="center">
   <strong>AI-powered i18n translation bot.</strong> Edit <code>en.json</code>, push, and your other locale files appear translated in a bot commit.<br>
@@ -21,11 +21,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/autoi18n"><img src="https://img.shields.io/npm/v/autoi18n.svg?color=8b5cf6&label=npm" alt="npm"></a>
-  <a href="https://www.npmjs.com/package/autoi18n"><img src="https://img.shields.io/npm/dm/autoi18n.svg?color=8b5cf6" alt="downloads"></a>
-  <a href="https://github.com/ffcabbar/autoi18n/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/autoi18n.svg?color=8b5cf6" alt="license MIT"></a>
-  <a href="https://github.com/marketplace/actions/autoi18n"><img src="https://img.shields.io/badge/marketplace-autoi18n-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Marketplace"></a>
-  <a href="https://github.com/ffcabbar/autoi18n/stargazers"><img src="https://img.shields.io/github/stars/ffcabbar/autoi18n?style=flat&color=8b5cf6" alt="stars"></a>
+  <a href="https://www.npmjs.com/package/autoglot"><img src="https://img.shields.io/npm/v/autoglot.svg?color=8b5cf6&label=npm" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/autoglot"><img src="https://img.shields.io/npm/dm/autoglot.svg?color=8b5cf6" alt="downloads"></a>
+  <a href="https://github.com/ffcabbar/autoglot/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/autoglot.svg?color=8b5cf6" alt="license MIT"></a>
+  <a href="https://github.com/marketplace/actions/autoglot"><img src="https://img.shields.io/badge/marketplace-autoglot-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Marketplace"></a>
+  <a href="https://github.com/ffcabbar/autoglot/stargazers"><img src="https://img.shields.io/github/stars/ffcabbar/autoglot?style=flat&color=8b5cf6" alt="stars"></a>
   <a href="https://github.com/sponsors/ffcabbar"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-ec4899" alt="Sponsor"></a>
 </p>
 
@@ -44,15 +44,15 @@
      File: .github/assets/demo.gif (1280x720, ≤ 8 MB, ≤ 30 s)
      Drop the file in and uncomment the <p> tag below.
 <p align="center">
-  <img src=".github/assets/demo.gif" alt="autoi18n in action: edit en.json, push, watch the bot translate and commit." width="820">
+  <img src=".github/assets/demo.gif" alt="autoglot in action: edit en.json, push, watch the bot translate and commit." width="820">
 </p>
 -->
 
 ## What it is (and isn't)
 
-autoi18n **fills in your missing locale files**. You write `messages/en.json`. autoi18n writes `messages/es.json`, `messages/de.json`, etc. by calling Claude on every push.
+autoglot **fills in your missing locale files**. You write `messages/en.json`. autoglot writes `messages/es.json`, `messages/de.json`, etc. by calling Claude on every push.
 
-It is **not** a runtime i18n library. You still need [`next-intl`](https://next-intl.dev/), [`react-i18next`](https://react.i18next.com/), [`vue-i18n`](https://vue-i18n.intlify.dev/), or similar to read those JSON files in your app and resolve `t("...")` calls. autoi18n is the translator; your i18n library is the reader.
+It is **not** a runtime i18n library. You still need [`next-intl`](https://next-intl.dev/), [`react-i18next`](https://react.i18next.com/), [`vue-i18n`](https://vue-i18n.intlify.dev/), or similar to read those JSON files in your app and resolve `t("...")` calls. autoglot is the translator; your i18n library is the reader.
 
 ## Why
 
@@ -92,7 +92,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: ffcabbar/autoi18n@v1
+      - uses: ffcabbar/autoglot@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
@@ -107,19 +107,19 @@ Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json` in your 
 ## Quickstart (CLI, no GitHub)
 
 ```bash
-npm install -D autoi18n
+npm install -D autoglot
 echo '{ "greeting": "Hello, world!" }' > messages/en.json
 echo '{}' > messages/es.json
 echo '{}' > messages/de.json
 
-ANTHROPIC_API_KEY=sk-ant-... npx autoi18n
+ANTHROPIC_API_KEY=sk-ant-... npx autoglot
 ```
 
 After the first run, `messages/es.json` and `messages/de.json` are populated, and `translate.lock` records what was translated.
 
 ## vs. the alternatives
 
-| | **autoi18n** | Languine | Lokalise / Crowdin / Phrase | i18n-ai-translate |
+| | **autoglot** | Languine | Lokalise / Crowdin / Phrase | i18n-ai-translate |
 |---|:---:|:---:|:---:|:---:|
 | License | **MIT** | AGPL-3.0 | Proprietary | MIT |
 | SaaS account required | **No** | No (CLI) | **Yes** | No |
@@ -193,7 +193,7 @@ Typical PR (1–3 changed keys × 30 locales) costs under a cent on Haiku. A fir
 ## Migrating from Languine
 
 ```bash
-npx autoi18n --import-languine=languine.lock
+npx autoglot --import-languine=languine.lock
 rm languine.json languine.lock
 ```
 
@@ -210,7 +210,7 @@ Then replace your Languine workflow with the one above. The lock file will be in
            or Stripe docs diagram. Inter font."
 -->
 <p align="center">
-  <img src=".github/assets/how-it-works.svg" alt="autoi18n architecture: diff → translate → merge → commit" width="1100">
+  <img src=".github/assets/how-it-works.svg" alt="autoglot architecture: diff → translate → merge → commit" width="1100">
 </p>
 
 1. **Flatten** your source JSON to dotted keys: `{ "checkout.cta": "Pay now" }`.
@@ -227,7 +227,7 @@ In CI, the action then commits the diff and posts the cost summary on the PR.
 <details>
 <summary><strong>Does it work with my framework?</strong></summary>
 
-If your i18n library reads JSON files (`next-intl`, `react-i18next`, `vue-i18n`, `i18next`, `formatjs`, `lingui`, `react-intl`, ...), yes. autoi18n is format-agnostic about how the JSON is structured.
+If your i18n library reads JSON files (`next-intl`, `react-i18next`, `vue-i18n`, `i18next`, `formatjs`, `lingui`, `react-intl`, ...), yes. autoglot is format-agnostic about how the JSON is structured.
 
 </details>
 
@@ -255,14 +255,14 @@ Coming in v0.2. Anthropic's tool use is the most stable for structured output to
 <details>
 <summary><strong>Is the bot a "real" GitHub bot with an avatar?</strong></summary>
 
-Not yet. v0.1 commits as `github-actions[bot]` (the default rabbit avatar). A real GitHub App with the autoi18n logo is on the roadmap — see `docs/distribution.md` for the four levels of bot identity and why we chose Level 1 to start.
+Not yet. v0.1 commits as `github-actions[bot]` (the default rabbit avatar). A real GitHub App with the autoglot logo is on the roadmap — see `docs/distribution.md` for the four levels of bot identity and why we chose Level 1 to start.
 
 </details>
 
 <details>
 <summary><strong>Can I run it without GitHub?</strong></summary>
 
-Yes. `npx autoi18n` works in any CI (GitLab, CircleCI, Jenkins, your laptop). The GitHub Action is just a thin wrapper that adds the `git commit` + `gh pr comment` ritual.
+Yes. `npx autoglot` works in any CI (GitLab, CircleCI, Jenkins, your laptop). The GitHub Action is just a thin wrapper that adds the `git commit` + `gh pr comment` ritual.
 
 </details>
 
@@ -291,15 +291,15 @@ Issues, PRs, and bug reports welcome. The codebase is intentionally tiny:
 - `tests/helpers.test.mjs` — `node:test` suite, runs offline
 
 ```bash
-git clone https://github.com/ffcabbar/autoi18n
-cd autoi18n
+git clone https://github.com/ffcabbar/autoglot
+cd autoglot
 npm test                                    # offline
 cd examples/basic && node ../../bin/translate.mjs --dry-run
 ```
 
 ## Sponsor
 
-If `autoi18n` saves you the cost of a Languine subscription, consider [sponsoring on GitHub](https://github.com/sponsors/ffcabbar). The whole project is one person's evenings.
+If `autoglot` saves you the cost of a Languine subscription, consider [sponsoring on GitHub](https://github.com/sponsors/ffcabbar). The whole project is one person's evenings.
 
 ## License
 
@@ -308,5 +308,5 @@ If `autoi18n` saves you the cost of a Languine subscription, consider [sponsorin
 ---
 
 <p align="center">
-  <sub>If autoi18n helped you, a ⭐ on the repo is the best way to say thanks.</sub>
+  <sub>If autoglot helped you, a ⭐ on the repo is the best way to say thanks.</sub>
 </p>

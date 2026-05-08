@@ -1,4 +1,4 @@
-name: 'autoi18n'
+name: 'autoglot'
 description: 'AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. MIT alternative to Languine, Lokalise, and Crowdin.'
 branding:
   icon: 'globe'
@@ -55,7 +55,7 @@ runs:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         SUMMARY_PATH: ${{ runner.temp }}/translate-summary.md
       run: |
-        npx -y autoi18n@${{ inputs.package-version }} \
+        npx -y autoglot@${{ inputs.package-version }} \
           --source="${{ inputs.source }}" \
           --messages-dir="${{ inputs.messages-dir }}" \
           --lock-file="${{ inputs.lock-file }}" \

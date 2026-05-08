@@ -1,10 +1,10 @@
 {
-  "name": "autoi18n",
+  "name": "autoglot",
   "version": "0.1.0",
   "description": "AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. MIT alternative to Languine, Lokalise, and Crowdin.",
   "type": "module",
   "bin": {
-    "autoi18n": "bin/translate.mjs"
+    "autoglot": "bin/translate.mjs"
   },
   "files": [
     "bin",
@@ -53,13 +53,13 @@
     "open-source",
     "mit"
   ],
-  "homepage": "https://github.com/ffcabbar/autoi18n",
+  "homepage": "https://github.com/ffcabbar/autoglot",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ffcabbar/autoi18n.git"
+    "url": "git+https://github.com/ffcabbar/autoglot.git"
   },
   "bugs": {
-    "url": "https://github.com/ffcabbar/autoi18n/issues"
+    "url": "https://github.com/ffcabbar/autoglot/issues"
   },
   "author": "ffcabbar",
   "license": "MIT",

@@ -1,4 +1,4 @@
-# autoi18n — release plan
+# autoglot — release plan
 
 > Single source of truth for getting this repo from "private folder on disk" to "1k+ stars on GitHub." Read this before you ship.
 
@@ -26,14 +26,14 @@ Other prior art in the space:
 - 15-format support. We do JSON only (covers `next-intl`, `react-i18next`, `vue-i18n`, `i18next`, basically all JS apps).
 - Glossy dashboard. There isn't one.
 
-## 2. Name decision: `autoi18n`
+## 2. Name decision: `autoglot`
 
 Checked npm and GitHub on 2026-05-06. Available in both. Reasoning:
 
 | Criterion | Result |
 |---|---|
-| npm collision | None (`registry.npmjs.org/autoi18n` → 404) |
-| GitHub collision | No popular repo named `autoi18n` |
+| npm collision | None (`registry.npmjs.org/autoglot` → 404) |
+| GitHub collision | No popular repo named `autoglot` |
 | SEO | Excellent — ranks for "auto i18n," "automatic i18n," "i18n automation" |
 | Pronounceability | "auto eye-eighteen-en" or "auto-i18n" — same as the well-known abbreviation |
 | Brand-neutrality | Doesn't lock to Claude (we want OpenAI/Gemini in v0.2) |
@@ -60,12 +60,12 @@ The name is ~5% of the outcome. These are the other 95%:
   ```
 - **Hero image / logo / social card** (`og:image`). Repos without one underperform measurably on share sites.
 - **30-second demo GIF** in the README, above the fold.
-- **Comparison table** (autoi18n vs Languine vs Lokalise vs Crowdin vs i18n-ai-translate).
+- **Comparison table** (autoglot vs Languine vs Lokalise vs Crowdin vs i18n-ai-translate).
 - **Real `examples/basic/` working out of the box** — already done.
 
 ### Launch day playbook
 1. **Show HN** Tuesday or Wednesday morning ET (9–10 am). Title:
-   > *Show HN: autoi18n – AI translation bot for your i18n JSON, MIT, single-file*
+   > *Show HN: autoglot – AI translation bot for your i18n JSON, MIT, single-file*
 
    First comment yourself: origin story (extracted from a private monorepo, replaced Languine, costs ~$0.001/PR).
 2. **Reddit**: r/webdev, r/javascript, r/nextjs (`next-intl` users), r/reactjs.
@@ -138,23 +138,23 @@ If you absolutely want to make money sooner, take a consulting gig with a compan
 ## 5. Release sequence — exact steps
 
 ### Pre-flight (do this in order, in this repo)
-- [x] Pick the name → `autoi18n` (done)
+- [x] Pick the name → `autoglot` (done)
 - [x] Rename in source → done in this commit
 - [x] Replace README with launch-grade version → done
-- [ ] **Rename the local folder**: `mv ~/Desktop/autoi18n ~/Desktop/autoi18n`. Claude can't do this safely while it's the working directory.
+- [ ] **Rename the local folder**: `mv ~/Desktop/autoglot ~/Desktop/autoglot`. Claude can't do this safely while it's the working directory.
 - [ ] **Generate images** for `.github/assets/` (see `.github/assets/README.md` for prompts)
 - [ ] **Verify tests pass**: `npm test`
 - [ ] **Smoke-test against `examples/basic/`**: `cd examples/basic && node ../../bin/translate.mjs --dry-run`
 
 ### Going public (you do this — Claude can't push to GitHub or npm)
 - [ ] `gh auth login` (if not already)
-- [ ] `gh repo create ffcabbar/autoi18n --public --source=. --push --description "AI-powered i18n translation bot. MIT alternative to Languine."`
+- [ ] `gh repo create ffcabbar/autoglot --public --source=. --push --description "AI-powered i18n translation bot. MIT alternative to Languine."`
 - [ ] Set repo topics on github.com (see list above)
 - [ ] Set repo social card image (Settings → Options → Social preview)
 - [ ] `git tag v0.1.0 && git tag v1 && git push origin v0.1.0 v1`
 - [ ] `npm login`
 - [ ] `npm publish --access public`
-- [ ] Smoke-test the published package: `npx autoi18n@latest --dry-run` in a scratch repo with `messages/en.json`
+- [ ] Smoke-test the published package: `npx autoglot@latest --dry-run` in a scratch repo with `messages/en.json`
 - [ ] **Marketplace listing**: GitHub repo → Releases → Draft a release for `v0.1.0` → tick "Publish this Action to GitHub Marketplace" → category: DevOps. Approval: 1–2 days.
 - [ ] **GitHub Sponsors profile**: github.com/sponsors → onboard → verify Stripe → confirm `Sponsor` button shows on the repo page.
 - [ ] (Optional) Set up Polar.sh and connect to the repo for issue bounties.
@@ -177,7 +177,7 @@ If you absolutely want to make money sooner, take a consulting gig with a compan
 ## 7. Reference: file inventory (post-rename)
 
 ```
-autoi18n/
+autoglot/
 ├── bin/
 │   ├── translate.mjs        # main entry, single file, zero deps
 │   └── helpers.mjs          # pure helpers, unit-tested

@@ -49,10 +49,10 @@ import {
 } from "./helpers.mjs";
 
 // --- Constants ------------------------------------------------------------
-const HELP_TEXT = `autoi18n — AI-powered i18n translation bot
+const HELP_TEXT = `autoglot — AI-powered i18n translation bot
 
 Usage
-  npx autoi18n [flags]
+  npx autoglot [flags]
 
 Flags
   --check                     CI gate: exit 1 if lock != source. No AI call.
@@ -73,7 +73,7 @@ Environment
   ANTHROPIC_API_KEY           Required for real runs. Not needed for --check or --dry-run.
 
 Docs
-  https://github.com/ffcabbar/autoi18n
+  https://github.com/ffcabbar/autoglot
 `;
 const CHUNK_SIZE = 200;
 const RATE_LIMIT_MAX_RETRIES = 5;

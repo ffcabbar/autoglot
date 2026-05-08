@@ -10,8 +10,8 @@
 
 ```bash
 # 1. Rename the local folder (Claude couldn't do this while inside it)
-mv ~/Desktop/lingobot ~/Desktop/autoi18n
-cd ~/Desktop/autoi18n
+mv ~/Desktop/lingobot ~/Desktop/autoglot
+cd ~/Desktop/autoglot
 
 # 2. Verify everything still works
 npm test
@@ -22,9 +22,9 @@ node bin/translate.mjs --help
 # 3. Commit the rename + launch prep
 git add -A
 git status                          # eyeball the diff
-git commit -m "feat: rename to autoi18n, ship launch-ready scaffolding
+git commit -m "feat: rename to autoglot, ship launch-ready scaffolding
 
-- Renamed lingobot → autoi18n project-wide
+- Renamed lingobot → autoglot project-wide
 - Launch-grade README with hero, badges, comparison table, FAQ
 - Placeholder SVG assets (hero, logo, how-it-works, pr-comment) so
   README renders before real images are produced
@@ -60,20 +60,20 @@ You can launch with the SVGs and replace later. Don't block on this.
 ## Phase C — GitHub repo (15 min)
 
 ```bash
-cd ~/Desktop/autoi18n
+cd ~/Desktop/autoglot
 
 # 1. Make sure gh CLI is logged in
 gh auth status      # if not logged in: gh auth login
 
 # 2. Create the public repo + push
-gh repo create ffcabbar/autoi18n \
+gh repo create ffcabbar/autoglot \
   --public \
   --source=. \
   --push \
   --description "AI-powered i18n translation bot. Edit en.json, push, watch a bot commit translated locale files. MIT alternative to Languine, Lokalise, Crowdin."
 
 # 3. Set repo topics (one-time, paste this exactly)
-gh repo edit ffcabbar/autoi18n --add-topic i18n,l10n,localization,translation,github-action,github-actions,anthropic,claude,ai,automation,cli,developer-tools,next-intl,react-i18next,vue-i18n,i18next,languine-alternative,lokalise-alternative,crowdin-alternative,open-source
+gh repo edit ffcabbar/autoglot --add-topic i18n,l10n,localization,translation,github-action,github-actions,anthropic,claude,ai,automation,cli,developer-tools,next-intl,react-i18next,vue-i18n,i18next,languine-alternative,lokalise-alternative,crowdin-alternative,open-source
 
 # 4. Tag v0.1.0 + v1 (the floating tag the action.yml@v1 ref resolves to)
 git tag v0.1.0
@@ -84,7 +84,7 @@ git push origin v0.1.0 v1
 **Then on github.com**:
 - Settings → Options → **Social preview** → upload `hero.png` (or a 1280×640 crop) — this is the image that shows when the repo is shared on Twitter/Bluesky/LinkedIn/HN
 - Settings → Features → enable **Discussions** (for general questions; the issue template config points there)
-- Settings → General → set **homepage URL** to `https://www.npmjs.com/package/autoi18n` (after Phase D)
+- Settings → General → set **homepage URL** to `https://www.npmjs.com/package/autoglot` (after Phase D)
 
 ## Phase D — npm publish (10 min)
 
@@ -96,16 +96,16 @@ npm whoami           # if not logged in: npm login
 npm publish --access public
 
 # 3. Verify
-npx autoi18n@latest --version   # → 0.1.0
-npx autoi18n@latest --help
+npx autoglot@latest --version   # → 0.1.0
+npx autoglot@latest --help
 
 # 4. Smoke-test the published package in a fresh dir
-mkdir /tmp/autoi18n-smoke && cd /tmp/autoi18n-smoke
+mkdir /tmp/autoglot-smoke && cd /tmp/autoglot-smoke
 echo '{"hi":"Hello"}' > en.json
 echo '{}' > es.json
 mkdir messages && mv en.json es.json messages/
-npx autoi18n@latest --dry-run    # should show 1 new key, 1 locale, dry-run
-cd ~/Desktop/autoi18n
+npx autoglot@latest --dry-run    # should show 1 new key, 1 locale, dry-run
+cd ~/Desktop/autoglot
 ```
 
 ## Phase E — Real-world end-to-end test (30 min)
@@ -114,7 +114,7 @@ Before launching publicly, prove the GitHub Action works on a real repo.
 
 ```bash
 # 1. Make a throwaway test repo
-mkdir ~/Desktop/autoi18n-demo && cd ~/Desktop/autoi18n-demo
+mkdir ~/Desktop/autoglot-demo && cd ~/Desktop/autoglot-demo
 git init
 mkdir messages
 echo '{"greeting":"Hello, world!","cta":"Get started"}' > messages/en.json
@@ -138,16 +138,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ffcabbar/autoi18n@v1
+      - uses: ffcabbar/autoglot@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 EOF
 
 # 3. Push to GitHub (public is fine for the test)
-gh repo create ffcabbar/autoi18n-demo --public --source=. --push --description "live demo of autoi18n"
+gh repo create ffcabbar/autoglot-demo --public --source=. --push --description "live demo of autoglot"
 
 # 4. Add ANTHROPIC_API_KEY as a repo secret
-gh secret set ANTHROPIC_API_KEY --repo ffcabbar/autoi18n-demo
+gh secret set ANTHROPIC_API_KEY --repo ffcabbar/autoglot-demo
 # (paste your sk-ant-... key when prompted)
 
 # 5. Open a PR by editing en.json on a branch
@@ -164,7 +164,7 @@ gh pr create --fill
 #    - post a "Translation run summary" comment on the PR
 ```
 
-Once you see the bot's PR comment, **screenshot it** and replace `.github/assets/pr-comment.svg` with `.github/assets/pr-comment.png` in `~/Desktop/autoi18n` and update the README accordingly. This screenshot is your single best marketing asset.
+Once you see the bot's PR comment, **screenshot it** and replace `.github/assets/pr-comment.svg` with `.github/assets/pr-comment.png` in `~/Desktop/autoglot` and update the README accordingly. This screenshot is your single best marketing asset.
 
 If the GIF recorder is open, also screen-record steps 5–6 → `demo.gif` (1280×720, ≤ 30s). Use [Gifski](https://gif.ski/) for compression.
 
@@ -181,7 +181,7 @@ On github.com:
 7. Read & accept Marketplace terms
 8. Click **Publish release**
 
-GitHub reviews in 1–2 days. Once approved, your listing is live at `https://github.com/marketplace/actions/autoi18n`.
+GitHub reviews in 1–2 days. Once approved, your listing is live at `https://github.com/marketplace/actions/autoglot`.
 
 ## Phase G — GitHub Sponsors (15 min + ~1 day Stripe verification)
 
@@ -195,15 +195,15 @@ On github.com:
 6. Add a **welcome message** for new sponsors
 7. Save & publish
 
-Verify the Sponsor button appears on `https://github.com/ffcabbar/autoi18n` once Stripe is verified.
+Verify the Sponsor button appears on `https://github.com/ffcabbar/autoglot` once Stripe is verified.
 
 ## Phase H — Reserve the GitHub App name (5 min — DO THIS EARLY)
 
-Even though you won't build the GitHub App until Stage 2, the name `autoi18n` is globally unique on GitHub. Reserve it now so no one else does.
+Even though you won't build the GitHub App until Stage 2, the name `autoglot` is globally unique on GitHub. Reserve it now so no one else does.
 
 1. Go to https://github.com/settings/apps → **New GitHub App**
-2. **GitHub App name:** `autoi18n`
-3. **Homepage URL:** `https://github.com/ffcabbar/autoi18n`
+2. **GitHub App name:** `autoglot`
+3. **Homepage URL:** `https://github.com/ffcabbar/autoglot`
 4. **Webhook URL:** `https://example.com/placeholder` (you'll change this in Stage 2)
 5. **Webhook:** uncheck "Active" for now (no webhook server exists yet)
 6. **Permissions:** leave at minimum. We'll edit later.

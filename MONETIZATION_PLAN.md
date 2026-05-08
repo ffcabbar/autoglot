@@ -1,4 +1,4 @@
-# autoi18n — year-one monetization plan
+# autoglot — year-one monetization plan
 
 > Star-milestone-based playbook. From v0.1 launch to (realistically) $1k–$10k MRR in 12 months. No bullshit numbers.
 
@@ -24,18 +24,18 @@ This plan optimizes for **path 2**: maximize income per evening of effort, with 
 | **External paywall** (license key) | ✅ Yes | License key in env, your code checks it. Charge via Polar.sh, Stripe, Lemon Squeezy. Open-core model. |
 | **Polar.sh issue bounties** | ✅ Yes | Companies fund specific issues. Per-issue, no recurring. |
 
-**Key insight:** to sell *on Marketplace itself* you need a **GitHub App**, not an Action. GitHub Apps have their own identity (avatar, profile, `[bot]` badge). The current `autoi18n` action is the OSS, free-forever core. The future paid GitHub App is what makes money.
+**Key insight:** to sell *on Marketplace itself* you need a **GitHub App**, not an Action. GitHub Apps have their own identity (avatar, profile, `[bot]` badge). The current `autoglot` action is the OSS, free-forever core. The future paid GitHub App is what makes money.
 
 **Strategic decision the docs force on you**: once the App is on Marketplace, you can't have a free Marketplace listing AND a separate paid Stripe paywall. You must put all paid tiers on Marketplace. So the path is:
 
-- **OSS GitHub Action** (`uses: ffcabbar/autoi18n@v1`) — stays MIT, free forever, no Marketplace billing involved
+- **OSS GitHub Action** (`uses: ffcabbar/autoglot@v1`) — stays MIT, free forever, no Marketplace billing involved
 - **GitHub App on Marketplace** — Free + Pro + Team plans, all billed by GitHub at 5% commission
 
 Two products, one repo.
 
 GitHub Marketplace App pricing rules (verified from current docs, 2026):
 
-| Rule | What it means for autoi18n |
+| Rule | What it means for autoglot |
 |---|---|
 | Plan types: **Free**, **Flat-rate**, **Per-unit** | We'll use Free + Flat-rate. Per-unit is for "per-seat" tools — not us. |
 | **Up to 10 plans** per listing | More than enough — we'll ship 3–4 (Free, Pro, Team, Enterprise) |
@@ -106,15 +106,15 @@ $0          $0–$50      $50–$300    $300–$1.5k  $1.5k–$5k   $5k–$20k+
 
 ### Do
 - [ ] **Reply to every issue within 24 hours.** This is the single highest-leverage activity at this stage. Repos with active maintainers get more stars; word spreads.
-- [ ] Add a "Used by" section to README once 5+ public repos are using the action (`github code search` for `uses: ffcabbar/autoi18n`)
+- [ ] Add a "Used by" section to README once 5+ public repos are using the action (`github code search` for `uses: ffcabbar/autoglot`)
 - [ ] Add **Polar.sh** integration. Convert top 5 GitHub issues to fundable. Companies pay $50–$500 per issue.
 - [ ] Set up `.github/FUNDING.yml` to include Polar.sh:
       ```yaml
       github: ffcabbar
       polar: ffcabbar
       ```
-- [ ] Write 1 deep-dive blog post: *"How autoi18n diffs JSON keys for 10× cheaper i18n updates"* — technical, ranks for "i18n diff cost".
-- [ ] First **case study** (free): help one real user (a startup using `next-intl`) migrate from Languine → autoi18n. Get a 2-line testimonial in exchange. Add to README.
+- [ ] Write 1 deep-dive blog post: *"How autoglot diffs JSON keys for 10× cheaper i18n updates"* — technical, ranks for "i18n diff cost".
+- [ ] First **case study** (free): help one real user (a startup using `next-intl`) migrate from Languine → autoglot. Get a 2-line testimonial in exchange. Add to README.
 
 ### Revenue
 - GitHub Sponsors: **$0–$50/mo** (1–5 sponsors at $5/mo is realistic)
@@ -134,12 +134,12 @@ $0          $0–$50      $50–$300    $300–$1.5k  $1.5k–$5k   $5k–$20k+
 
 ## Stage 2 — 500–2k stars (months 2–4)
 
-**Goal:** stop being "github-actions[bot]." Build the GitHub App so the bot has the autoi18n avatar and identity. **Free tier only at this stage.**
+**Goal:** stop being "github-actions[bot]." Build the GitHub App so the bot has the autoglot avatar and identity. **Free tier only at this stage.**
 
 ### Do
 - [ ] **Register a GitHub App** at github.com/settings/apps (or under your org's settings → Developer settings → GitHub Apps → "New GitHub App"):
-  - **Name**: `autoi18n` — max 34 chars, must be globally unique on GitHub. Lowercased and dash-joined for the slug. Reserve this name **before someone else takes it** — anyone can register an App with any free name. ⚠️ **Do this in Stage 1, even if you don't build the App until Stage 2.**
-  - **Homepage URL**: `https://github.com/ffcabbar/autoi18n`
+  - **Name**: `autoglot` — max 34 chars, must be globally unique on GitHub. Lowercased and dash-joined for the slug. Reserve this name **before someone else takes it** — anyone can register an App with any free name. ⚠️ **Do this in Stage 1, even if you don't build the App until Stage 2.**
+  - **Homepage URL**: `https://github.com/ffcabbar/autoglot`
   - **Webhook URL**: your Cloudflare Worker / Vercel function endpoint (set "Active" off until you build the backend)
   - **Webhook secret**: generate a random 32-byte hex string and store it
   - **Permissions**: `contents: write`, `pull-requests: write`, `metadata: read`
@@ -149,13 +149,13 @@ $0          $0–$50      $50–$300    $300–$1.5k  $1.5k–$5k   $5k–$20k+
 - [ ] Build the App backend (small Cloudflare Worker or Vercel function — free tier covers all of this for years):
   - Receives webhook on `push`
   - Mints installation token
-  - Runs the autoi18n script (same code) using the user's `ANTHROPIC_API_KEY` (stored encrypted in the App's per-installation config) OR a "BYOK" model where the user pastes it once at install time
-  - Commits results with the App's identity → `🤖 autoi18n[bot]` with the autoi18n purple-globe avatar and the orange `[bot]` badge
+  - Runs the autoglot script (same code) using the user's `ANTHROPIC_API_KEY` (stored encrypted in the App's per-installation config) OR a "BYOK" model where the user pastes it once at install time
+  - Commits results with the App's identity → `🤖 autoglot[bot]` with the autoglot purple-globe avatar and the orange `[bot]` badge
 - [ ] **Free plan only** for now. Goal is to validate that the App is more frictionless than the Action workflow YAML.
 - [ ] List the App on GitHub Marketplace as **Free** (still no paid tier).
 - [ ] Become a **Verified Publisher** (free; needs business email + org 2FA). This unlocks paid plans later and gives you the 95% revenue share.
 - [ ] Keep the OSS Action working and unchanged. Both ship side-by-side.
-- [ ] Add a `Works with autoi18n` README badge (a custom shield others can paste in their repo).
+- [ ] Add a `Works with autoglot` README badge (a custom shield others can paste in their repo).
 
 ### Revenue
 - GitHub Sponsors: **$50–$200/mo**
@@ -183,11 +183,11 @@ You don't know what users will pay for. Wait until ~50 organic App installs, the
   - **Multi-provider fallback** — Claude → GPT → Gemini chain so a 5xx from one doesn't block the bot.
   - **Translation review portal** — generated static HTML page (no backend) where non-dev team members can approve/reject suggested translations before merge. Massive value for marketing teams.
   - **Slack/Discord notifications** — translation summary posted to a channel.
-  - **Custom commit author** — `<your-org>-bot[bot]` instead of `autoi18n[bot]`.
+  - **Custom commit author** — `<your-org>-bot[bot]` instead of `autoglot[bot]`.
   - **Priority API access** — your translations skip Anthropic rate-limits via your own pooled API key.
 - [ ] **Start with 1 Pro feature**, ship it in 2–3 weeks. Don't over-build.
 - [ ] **Pricing** (every plan must have BOTH monthly and annual price per Marketplace rules):
-  - **Free**: up to 100 keys, public repos only, autoi18n[bot] author. Forever free.
+  - **Free**: up to 100 keys, public repos only, autoglot[bot] author. Forever free.
   - **Pro**: **$9/mo or $86/yr** (≈20% off annual). Unlimited keys, private repos, priority queue, glossary auto-mining. 14-day free trial enabled.
   - **Team**: **$39/mo or $374/yr**. Up to 10 repos, Pro features + review portal + Slack notifications.
   - You can have up to 10 plans on a Marketplace listing — start with these 3, add Enterprise in Stage 4.
@@ -198,7 +198,7 @@ You don't know what users will pay for. Wait until ~50 organic App installs, the
   - Make the App installation a 2-click flow from the README ("Install the bot →" button → GitHub OAuth)
   - In-App upsell: when a free user hits the 100-key limit, show a paywall in the bot's PR comment with a 14-day Pro trial link
 - [ ] Hire (well, contract) a 1-day designer for ~$500 to polish the App's avatar + landing page if you haven't already.
-- [ ] **Comparison content** for SEO: dedicated pages "autoi18n vs Languine," "autoi18n vs Lokalise," "autoi18n vs Crowdin." Each is a separate URL on a tiny static site (Vercel free). These rank well and bring buying-intent traffic.
+- [ ] **Comparison content** for SEO: dedicated pages "autoglot vs Languine," "autoglot vs Lokalise," "autoglot vs Crowdin." Each is a separate URL on a tiny static site (Vercel free). These rank well and bring buying-intent traffic.
 
 ### Revenue math (realistic)
 
@@ -302,7 +302,7 @@ At ~10k stars and $3k–$6k MRR, you have a real choice:
 ### Path B — Go full-time, build the team SaaS
 - Need 6 months runway at this stage ($30k+ savings)
 - Quit job, hire 1 contractor immediately
-- Position autoi18n as an **i18n-team product**, not a developer tool. Sell to mid-market ($500–$5k/mo per company), not per-repo.
+- Position autoglot as an **i18n-team product**, not a developer tool. Sell to mid-market ($500–$5k/mo per company), not per-repo.
 - Realistic 12-month outcome from $5k MRR: $25k–$80k MRR (5–16× growth).
 - Year 3 outcome if you nail mid-market: $200k–$1M ARR.
 - This is the **YC application path.**
@@ -322,15 +322,15 @@ At ~10k stars and $3k–$6k MRR, you have a real choice:
 Forget stage 5. You're at stage 0 with 0 stars. Your only job:
 
 1. ✅ Generate the 5 images in `.github/assets/` (use the prompts in `.github/assets/README.md`)
-2. ✅ `mv ~/Desktop/lingobot ~/Desktop/autoi18n`
-3. ✅ `gh repo create ffcabbar/autoi18n --public --source=. --push`
+2. ✅ `mv ~/Desktop/lingobot ~/Desktop/autoglot`
+3. ✅ `gh repo create ffcabbar/autoglot --public --source=. --push`
 4. ✅ Set repo topics (list in `RELEASE_PLAN.md` §3)
 5. ✅ `npm publish --access public`
 6. ✅ Tag `v0.1.0` + `v1`
 7. ✅ Submit Marketplace listing (free Action)
 8. ✅ Write the Show HN post and schedule it for next Tuesday 9am ET
 9. ✅ Set up GitHub Sponsors profile
-10. ✅ **Reserve the GitHub App name `autoi18n`** at github.com/settings/apps (App names are globally unique — squat your own name before someone else does, even though you won't build the App until Stage 2)
+10. ✅ **Reserve the GitHub App name `autoglot`** at github.com/settings/apps (App names are globally unique — squat your own name before someone else does, even though you won't build the App until Stage 2)
 
 Stage 1 unlocks once you cross **100 stars**. Don't skip ahead. The single most common mistake at every stage of this ladder is **building Stage N+2 features when you're at Stage N**. Stay focused on the next milestone.
 

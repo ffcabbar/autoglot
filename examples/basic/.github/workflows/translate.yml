@@ -24,6 +24,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ffcabbar/autoi18n@v1
+      - uses: ffcabbar/autoglot@v1
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
