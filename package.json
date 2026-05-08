@@ -4,7 +4,7 @@
   "description": "AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. MIT alternative to Languine, Lokalise, and Crowdin.",
   "type": "module",
   "bin": {
-    "autoi18n": "./bin/translate.mjs"
+    "autoi18n": "bin/translate.mjs"
   },
   "files": [
     "bin",
