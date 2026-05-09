@@ -15,6 +15,18 @@ import { ask, select, multiselect, confirm, info, ok, warn, err, step, c, closeP
 import { detect, LOCALE_CATALOG } from "./detect.mjs";
 import * as common from "./templates/common.mjs";
 import * as nextAppRouter from "./templates/nextjs-app-router.mjs";
+import * as nextPagesRouter from "./templates/nextjs-pages-router.mjs";
+import * as reactNative from "./templates/react-native.mjs";
+import * as viteReact from "./templates/vite-react.mjs";
+import * as vueI18n from "./templates/vue-i18n.mjs";
+
+const TEMPLATES = {
+  "nextjs-app": nextAppRouter,
+  "nextjs-pages": nextPagesRouter,
+  "react-native": reactNative,
+  "vite-react": viteReact,
+  "vue": vueI18n,
+};
 
 export async function run() {
   const cwd = process.cwd();
@@ -79,12 +91,20 @@ export async function run() {
   // runtime i18n library is fragile (peer-dep mismatches across React 18/19,
   // RN versions, monorepo hoisting). We just print the command and let the
   // user own that step.
+  //
+  // Use the template's full runtimePackages list (e.g. RN needs both i18next
+  // AND react-i18next, not just one) instead of the single fw.runtime label.
   let runtimeInstallHint = null;
   if (fw.runtime) {
-    if (hasPkg && (pkg.dependencies?.[fw.runtime] || pkg.devDependencies?.[fw.runtime])) {
-      ok(`${fw.runtime} is already installed.`);
+    const templateForHint = TEMPLATES[fw.key];
+    const pkgs = templateForHint?.runtimePackages || [fw.runtime];
+    const installed = hasPkg
+      ? pkgs.every((p) => pkg.dependencies?.[p] || pkg.devDependencies?.[p])
+      : false;
+    if (installed) {
+      ok(`${pkgs.join(" + ")} already installed.`);
     } else {
-      runtimeInstallHint = fw.runtime;
+      runtimeInstallHint = pkgs.join(" ");
     }
   }
 
@@ -118,13 +138,14 @@ export async function run() {
 
   // Framework-specific files
   let followupNotes = [];
-  if (fw.key === "nextjs-app") {
+  const tpl = TEMPLATES[fw.key];
+  if (tpl) {
     const hasExistingApp = present.has("src/app") || present.has("app");
     const ctx = { defaultLocale, locales: [defaultLocale, ...targetLocales], hasExistingApp };
-    for (const f of nextAppRouter.files(ctx)) {
+    for (const f of tpl.files(ctx)) {
       filesToWrite.push({ path: f.path, content: f.content, skipIfExists: true });
     }
-    followupNotes = nextAppRouter.followupNotes(ctx);
+    followupNotes = tpl.followupNotes(ctx);
   }
 
   // Show plan

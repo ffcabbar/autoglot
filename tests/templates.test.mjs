@@ -2,6 +2,10 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import * as common from "../bin/templates/common.mjs";
 import * as nextApp from "../bin/templates/nextjs-app-router.mjs";
+import * as nextPages from "../bin/templates/nextjs-pages-router.mjs";
+import * as rn from "../bin/templates/react-native.mjs";
+import * as vite from "../bin/templates/vite-react.mjs";
+import * as vue from "../bin/templates/vue-i18n.mjs";
 
 describe("common templates", () => {
   test("workflow uses default messagesDir", () => {
@@ -97,5 +101,91 @@ describe("next-intl App Router template", () => {
     const b = nextApp.followupNotes({ hasExistingApp: false });
     assert.ok(a.some((n) => /did NOT migrate/i.test(n)));
     assert.ok(b.some((n) => /try `npm run dev`/i.test(n)));
+  });
+});
+
+describe("react-native template", () => {
+  const ctx = { defaultLocale: "en", locales: ["en", "es", "tr"] };
+
+  test("indexTs imports each locale", () => {
+    const t = rn.indexTs(ctx);
+    assert.match(t, /import en from "\.\.\/\.\.\/messages\/en\.json"/);
+    assert.match(t, /import es from "\.\.\/\.\.\/messages\/es\.json"/);
+    assert.match(t, /import tr from "\.\.\/\.\.\/messages\/tr\.json"/);
+  });
+
+  test("indexTs registers initReactI18next + compatibilityJSON v4", () => {
+    const t = rn.indexTs(ctx);
+    assert.match(t, /initReactI18next/);
+    assert.match(t, /compatibilityJSON: "v4"/);
+    assert.match(t, /lng: "en"/);
+  });
+
+  test("locale codes with dashes are sanitized for JS identifiers", () => {
+    const t = rn.indexTs({ defaultLocale: "en", locales: ["en", "zh-CN"] });
+    assert.match(t, /import zh_CN from/);
+    assert.match(t, /"zh-CN": \{ translation: zh_CN \}/);
+  });
+
+  test("files() returns one file at src/i18n/index.ts", () => {
+    const fs = rn.files(ctx);
+    assert.equal(fs.length, 1);
+    assert.equal(fs[0].path, "src/i18n/index.ts");
+  });
+
+  test("runtimePackages = i18next + react-i18next", () => {
+    assert.deepEqual(rn.runtimePackages, ["i18next", "react-i18next"]);
+  });
+});
+
+describe("vite-react template", () => {
+  const ctx = { defaultLocale: "en", locales: ["en", "fr"] };
+
+  test("i18nTs imports from ../messages/", () => {
+    const t = vite.i18nTs(ctx);
+    assert.match(t, /import en from "\.\.\/messages\/en\.json"/);
+    assert.match(t, /import fr from "\.\.\/messages\/fr\.json"/);
+  });
+
+  test("file is at src/i18n.ts", () => {
+    assert.equal(vite.files(ctx)[0].path, "src/i18n.ts");
+  });
+});
+
+describe("vue-i18n template", () => {
+  const ctx = { defaultLocale: "en", locales: ["en", "ja"] };
+
+  test("createI18n with composition API mode", () => {
+    const t = vue.i18nTs(ctx);
+    assert.match(t, /createI18n/);
+    assert.match(t, /legacy: false/);
+    assert.match(t, /locale: "en"/);
+  });
+
+  test("file is at src/i18n.ts", () => {
+    assert.equal(vue.files(ctx)[0].path, "src/i18n.ts");
+  });
+
+  test("runtimePackages = vue-i18n only", () => {
+    assert.deepEqual(vue.runtimePackages, ["vue-i18n"]);
+  });
+});
+
+describe("nextjs-pages-router template", () => {
+  const ctx = { defaultLocale: "en", locales: ["en", "es", "de"] };
+
+  test("scaffolds no files (manual wiring)", () => {
+    assert.deepEqual(nextPages.files(ctx), []);
+  });
+
+  test("recommends next-i18next", () => {
+    assert.deepEqual(nextPages.runtimePackages, ["next-i18next", "react-i18next", "i18next"]);
+  });
+
+  test("followupNotes mention next.config.js i18n block", () => {
+    const notes = nextPages.followupNotes(ctx);
+    assert.ok(notes.some((n) => /next\.config\.js/i.test(n)));
+    assert.ok(notes.some((n) => /appWithTranslation/i.test(n)));
+    assert.ok(notes.some((n) => /serverSideTranslations/i.test(n)));
   });
 });

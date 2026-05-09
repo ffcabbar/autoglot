@@ -78,10 +78,21 @@ npx autoglot init
 
 That's it. The CLI:
 
-- detects your framework (Next.js App Router / Pages Router, React Native, Vite + React, Vue / Nuxt, or generic)
+- detects your framework (see table below) and picks the right runtime i18n library to recommend
 - asks which target locales to support (interactive multi-select)
-- scaffolds `messages/en.json`, empty `messages/<locale>.json` per language, `translate.config.json`, the `.github/workflows/translate.yml` workflow, and framework-specific glue (e.g. `src/i18n/routing.ts` + `middleware.ts` for Next.js + `next-intl`)
+- scaffolds `messages/en.json`, empty `messages/<locale>.json` per language, `translate.config.json`, the `.github/workflows/translate.yml` workflow, and framework-specific glue
 - never overwrites existing files (skips them and prints a clear plan before writing)
+
+### Supported frameworks
+
+| Framework | Runtime library | What `init` scaffolds |
+|---|---|---|
+| **Next.js (App Router)** | `next-intl` | `src/i18n/routing.ts`, `src/i18n/request.ts`, `src/middleware.ts`, plus a starter `src/app/[locale]/layout.tsx` + `page.tsx` if no `[locale]` segment exists |
+| **Next.js (Pages Router)** | `next-i18next` | Messages + workflow only; prints precise wiring steps (next.config.js i18n block, `appWithTranslation` HOC, `serverSideTranslations` in pages) |
+| **React Native** | `i18next` + `react-i18next` | `src/i18n/index.ts` with all locales registered |
+| **Vite + React** | `i18next` + `react-i18next` | `src/i18n.ts` |
+| **Vue / Nuxt** | `vue-i18n` | `src/i18n.ts` (Composition API mode) |
+| **Generic / unknown** | (your choice) | Messages + workflow only — pair with any i18n library that reads JSON |
 
 After init, three things to finish:
 
@@ -259,7 +270,7 @@ In CI, the action then commits the diff and posts the cost summary on the PR.
 <details>
 <summary><strong>Does it work with my framework?</strong></summary>
 
-If your i18n library reads JSON files (`next-intl`, `react-i18next`, `vue-i18n`, `i18next`, `formatjs`, `lingui`, `react-intl`, ...), yes. autoglot is format-agnostic about how the JSON is structured.
+Yes. `npx autoglot init` has explicit support for **Next.js (App Router & Pages Router)**, **React Native**, **Vite + React**, and **Vue / Nuxt** — it scaffolds the right runtime setup for each. For anything else (Astro, SvelteKit, Solid, plain HTML, native mobile, server-side, ...) `init` runs in generic mode and just creates the messages + workflow; pair with whichever i18n library you already use that reads JSON.
 
 </details>
 

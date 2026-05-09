@@ -42,8 +42,8 @@ export function detect(pkg, present) {
     return {
       key: "nextjs-pages",
       label: "Next.js (Pages Router)",
-      runtime: "next-intl",
-      note: "Pages Router template ships in v0.2.x. For now we'll scaffold messages + workflow only.",
+      runtime: "next-i18next",
+      note: "We'll scaffold messages + workflow and print the next-i18next wiring steps. We don't auto-modify next.config.js or _app.tsx.",
     };
   }
 
@@ -52,7 +52,6 @@ export function detect(pkg, present) {
       key: "vue",
       label: "Vue / Nuxt",
       runtime: "vue-i18n",
-      note: "Vue template ships in v0.2.x. For now we'll scaffold messages + workflow only.",
     };
   }
 
@@ -61,7 +60,6 @@ export function detect(pkg, present) {
       key: "vite-react",
       label: "Vite + React",
       runtime: "react-i18next",
-      note: "Vite + React template ships in v0.2.x. For now we'll scaffold messages + workflow only.",
     };
   }
 

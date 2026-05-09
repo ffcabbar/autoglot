@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-05-09
+
+### Added
+
+- **`autoglot init` now scaffolds 5 frameworks**, not just Next.js App Router:
+  - **Next.js (Pages Router)** — recommends `next-i18next` and prints precise wiring steps for `next.config.js`, `_app.tsx`, and `getStaticProps`. We deliberately don't auto-modify those files.
+  - **React Native** — scaffolds `src/i18n/index.ts` with `i18next` + `react-i18next`, includes `compatibilityJSON: "v4"` for RN's stricter Intl.
+  - **Vite + React** — scaffolds `src/i18n.ts` with `i18next` + `react-i18next`.
+  - **Vue / Nuxt** — scaffolds `src/i18n.ts` with `vue-i18n` Composition API mode.
+- Locale codes containing dashes (`zh-CN`, `pt-BR`, etc.) are now sanitized into valid JS identifiers for the import bindings while preserving the original code as the resource key.
+- Runtime install hint now lists *all* required packages (e.g. `npm install i18next react-i18next`), not just the headline runtime label.
+
+### Changed
+
+- `detect.mjs` no longer marks Pages Router / Vite / Vue as "ships in v0.2.x" — they're real now.
+
 ## [0.2.0] - 2026-05-09
 
 ### Added
