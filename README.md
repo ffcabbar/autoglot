@@ -115,6 +115,7 @@ npx autoglot                     # run translation (the default; same as before)
 npx autoglot init                # interactive scaffold (above)
 npx autoglot add tr ja zh        # add new target locales (creates empty JSON files)
 npx autoglot doctor              # health check the setup
+npx autoglot extract             # scan source for hardcoded strings and suggest keys
 npx autoglot --help              # full flag list
 ```
 

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-05-09
+
+### Added
+
+- **`autoglot extract`** — scans your source files (`.tsx/.jsx/.ts/.js/.vue/.svelte` under `src/`, `app/`, `pages/`, `components/`, `screens/`) for hardcoded user-facing strings and prints a report with suggested key paths.
+  - Looks at: JSX text content between tags (skipping expressions like `{name}`) and common string-valued props (`placeholder`, `aria-label`, `title`, `alt`, `label`).
+  - Conservative heuristics: rejects URLs, paths, filenames, identifier-like single words (lowercase + dashes/underscores/digits), ALL_CAPS constants, pure numeric/symbol strings, and HTML entities.
+  - Suggests dotted key paths derived from file path conventions (e.g. `src/app/dashboard/page.tsx` → `dashboard.<word>`; bracketed segments like `[locale]` are dropped; trailing `page`/`index`/`layout` is stripped).
+  - Read-only: never modifies source files. Prints a JSON tree ready to copy into `messages/en.json`.
+- 27 new unit tests for `extract-helpers.mjs` (full suite: 86/86 green).
+
+### Changed
+
+- `cli.mjs` recognizes the new `extract` subcommand and lists it in `--help`.
+
 ## [0.2.1] - 2026-05-09
 
 ### Added

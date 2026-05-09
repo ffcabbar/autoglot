@@ -15,7 +15,7 @@
 
 import { readFileSync } from "node:fs";
 
-const SUBCOMMANDS = new Set(["init", "add", "doctor", "help"]);
+const SUBCOMMANDS = new Set(["init", "add", "doctor", "extract", "help"]);
 const argv = process.argv.slice(2);
 const first = argv[0];
 
@@ -26,6 +26,7 @@ Usage
   npx autoglot init                  Interactive setup for a new project
   npx autoglot add <locale>          Add an empty target locale file
   npx autoglot doctor                Health check of your autoglot setup
+  npx autoglot extract               Scan source files for hardcoded strings
   npx autoglot --version | -v        Print version
   npx autoglot --help | -h           Print help
 
@@ -74,6 +75,12 @@ if (first === "add") {
 
 if (first === "doctor") {
   const m = await import("./doctor.mjs");
+  await m.run(argv.slice(1));
+  process.exit(0);
+}
+
+if (first === "extract") {
+  const m = await import("./extract.mjs");
   await m.run(argv.slice(1));
   process.exit(0);
 }
