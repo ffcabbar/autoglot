@@ -1,10 +1,10 @@
 {
   "name": "autoglot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. MIT alternative to Languine, Lokalise, and Crowdin.",
   "type": "module",
   "bin": {
-    "autoglot": "bin/translate.mjs"
+    "autoglot": "bin/cli.mjs"
   },
   "files": [
     "bin",
@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "translate": "node bin/translate.mjs",
-    "test": "node --test tests/helpers.test.mjs"
+    "test": "node --test tests/helpers.test.mjs tests/detect.test.mjs tests/templates.test.mjs"
   },
   "keywords": [
     "i18n",

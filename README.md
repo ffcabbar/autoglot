@@ -68,7 +68,48 @@ It is **not** a runtime i18n library. You still need [`next-intl`](https://next-
   <img src=".github/assets/pr-comment.svg" alt="The bot posts a cost summary as a PR comment" width="720">
 </p>
 
-## Quickstart (GitHub Action)
+## Quickstart — `npx autoglot init` (30 seconds)
+
+Inside any project:
+
+```bash
+npx autoglot init
+```
+
+That's it. The CLI:
+
+- detects your framework (Next.js App Router / Pages Router, React Native, Vite + React, Vue / Nuxt, or generic)
+- asks which target locales to support (interactive multi-select)
+- scaffolds `messages/en.json`, empty `messages/<locale>.json` per language, `translate.config.json`, the `.github/workflows/translate.yml` workflow, and framework-specific glue (e.g. `src/i18n/routing.ts` + `middleware.ts` for Next.js + `next-intl`)
+- never overwrites existing files (skips them and prints a clear plan before writing)
+
+After init, three things to finish:
+
+```bash
+# 1. Install the runtime i18n library it suggested (e.g. next-intl, react-i18next)
+npm install next-intl
+
+# 2. Add your Anthropic API key as a repo secret
+gh secret set ANTHROPIC_API_KEY
+
+# 3. Edit messages/en.json with real strings, then push.
+```
+
+Push → GitHub Action runs → bot commits `messages/<locale>.json` translations + cost summary on the PR.
+
+## Other commands
+
+```bash
+npx autoglot                     # run translation (the default; same as before)
+npx autoglot init                # interactive scaffold (above)
+npx autoglot add tr ja zh        # add new target locales (creates empty JSON files)
+npx autoglot doctor              # health check the setup
+npx autoglot --help              # full flag list
+```
+
+## Quickstart — GitHub Action (manual setup)
+
+If you'd rather skip `init` and write the workflow yourself:
 
 ```yaml
 # .github/workflows/translate.yml
@@ -97,25 +138,16 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json` in your repo, and create one empty `messages/<locale>.json` per language. On the next push, the bot will:
+Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json`, create one empty `messages/<locale>.json` per language. On every push the bot will diff, translate, commit the diff back, and post a cost summary.
 
-1. Diff `en.json` against the lock file (`md5` per key).
-2. Send only changed/new keys to Claude.
-3. Write each locale's JSON file.
-4. Commit `chore(i18n): update translations` and post a cost summary on the PR.
-
-## Quickstart (CLI, no GitHub)
+## Quickstart — CLI (no GitHub)
 
 ```bash
 npm install -D autoglot
-echo '{ "greeting": "Hello, world!" }' > messages/en.json
-echo '{}' > messages/es.json
-echo '{}' > messages/de.json
-
 ANTHROPIC_API_KEY=sk-ant-... npx autoglot
 ```
 
-After the first run, `messages/es.json` and `messages/de.json` are populated, and `translate.lock` records what was translated.
+Works in any CI (GitLab, CircleCI, Jenkins) or on your laptop.
 
 ## vs. the alternatives
 
