@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-14
+
+### Added
+
+- **`autoglot init --install`** — opt-in flag that installs the runtime i18n library after scaffolding, so users don't have to copy-paste a second command. Auto-detects the package manager from lockfiles (`bun.lockb` → bun, `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, otherwise npm). Override with `--pm=npm|yarn|pnpm|bun`.
+- **Interactive install prompt.** When neither `--install` nor `--no-install` is passed, `init` asks ("Install runtime packages now?", default No) so the user is in the loop. Pass `--no-install` to skip the prompt entirely (useful in CI).
+- **Graceful failure handling.** If the package manager exits non-zero (peer-dep clash, network error, etc.), `init` doesn't pretend it succeeded — it surfaces the exit code and prints the exact retry command in the "Next steps" section.
+- New unit tests: 13 for `pm.mjs` (lockfile detection + install command construction), 7 for `parseInitArgs` (flag parsing, forward-compat for unknown flags). Full suite: 106/106 green.
+
+### Changed
+
+- `init` now accepts and parses flags (previously ignored). Existing flag-less invocations behave unchanged: no install runs unless the user opts in.
+- The "Next steps" panel now uses the detected package manager's syntax in the install hint (e.g. `pnpm add next-intl` instead of always `npm install next-intl`).
+
 ## [0.2.2] - 2026-05-09
 
 ### Added

@@ -11,8 +11,10 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { ask, select, multiselect, confirm, info, ok, warn, err, step, c, closePrompts } from "./prompts.mjs";
 import { detect, LOCALE_CATALOG } from "./detect.mjs";
+import { detectPackageManager, installCommand, PACKAGE_MANAGERS } from "./pm.mjs";
 import * as common from "./templates/common.mjs";
 import * as nextAppRouter from "./templates/nextjs-app-router.mjs";
 import * as nextPagesRouter from "./templates/nextjs-pages-router.mjs";
@@ -28,7 +30,32 @@ const TEMPLATES = {
   "vue": vueI18n,
 };
 
-export async function run() {
+/**
+ * Parse `init`-specific flags. Unknown flags are ignored (forward-compat).
+ *
+ *   --install            opt-in: run the package manager to install runtime deps
+ *   --pm=npm|yarn|pnpm|bun  override the auto-detected package manager
+ *   --no-install         force off (useful in CI if a default ever flips)
+ */
+export function parseInitArgs(argv) {
+  const opts = { install: false, installExplicit: false, pm: null };
+  for (const arg of argv) {
+    if (arg === "--install") {
+      opts.install = true;
+      opts.installExplicit = true;
+    } else if (arg === "--no-install") {
+      opts.install = false;
+      opts.installExplicit = true;
+    } else if (arg.startsWith("--pm=")) {
+      const v = arg.slice("--pm=".length);
+      if (PACKAGE_MANAGERS.includes(v)) opts.pm = v;
+    }
+  }
+  return opts;
+}
+
+export async function run(argv = []) {
+  const opts = parseInitArgs(argv);
   const cwd = process.cwd();
   step("autoglot init");
   info(`cwd: ${c.dim}${cwd}${c.reset}`);
@@ -179,14 +206,48 @@ export async function run() {
     written++;
   }
 
-  // Final report + next steps
+  // Final report
   step("Done");
   info(`Wrote ${written} file${written === 1 ? "" : "s"}, skipped ${skipped} existing file${skipped === 1 ? "" : "s"}.`);
 
+  // Optionally install runtime deps. Default is OFF — auto-install across
+  // monorepos / mixed React versions is fragile. Opt in with --install.
+  let installSucceeded = false;
+  let installFailed = false;
+  if (runtimeInstallHint) {
+    const pkgs = runtimeInstallHint.split(" ").filter(Boolean);
+    let shouldInstall = opts.install;
+    if (!opts.installExplicit) {
+      shouldInstall = await confirm(
+        `Install runtime packages now (${pkgs.join(", ")})?`,
+        false,
+      );
+    }
+    if (shouldInstall) {
+      const pm = opts.pm || detectPackageManager(cwd);
+      const [bin, ...args] = installCommand(pm, pkgs);
+      step(`Installing with ${pm}`);
+      info(`${c.dim}${bin} ${args.join(" ")}${c.reset}`);
+      const res = spawnSync(bin, args, { stdio: "inherit", cwd });
+      if (res.status === 0) {
+        ok(`Installed ${pkgs.join(", ")} via ${pm}.`);
+        installSucceeded = true;
+      } else {
+        warn(`${pm} install exited with code ${res.status ?? "?"}. You can re-run manually.`);
+        installFailed = true;
+      }
+    }
+  }
+
   step("Next steps");
   const numbered = [];
-  if (runtimeInstallHint) {
-    numbered.push(`Install the runtime i18n library:\n      ${c.dim}npm install ${runtimeInstallHint}${c.reset}`);
+  if (runtimeInstallHint && !installSucceeded) {
+    const hintPm = opts.pm || detectPackageManager(cwd);
+    const [bin, ...args] = installCommand(hintPm, runtimeInstallHint.split(" ").filter(Boolean));
+    const label = installFailed
+      ? `Retry installing the runtime i18n library:`
+      : `Install the runtime i18n library:`;
+    numbered.push(`${label}\n      ${c.dim}${bin} ${args.join(" ")}${c.reset}`);
   }
   numbered.push(
     `Add ${c.bold}ANTHROPIC_API_KEY${c.reset} to your repo secrets:\n      ${c.dim}gh secret set ANTHROPIC_API_KEY${c.reset}`,

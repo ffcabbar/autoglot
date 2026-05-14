@@ -30,6 +30,11 @@ Usage
   npx autoglot --version | -v        Print version
   npx autoglot --help | -h           Print help
 
+init flags
+  --install                   Install runtime i18n library after scaffolding.
+  --no-install                Skip the interactive install prompt.
+  --pm=npm|yarn|pnpm|bun      Override the auto-detected package manager.
+
 Translation flags (when no subcommand given)
   --check                     CI gate: exit 1 if lock != source. No AI call.
   --dry-run                   Show plan, no AI call, no writes.
