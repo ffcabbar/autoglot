@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "translate": "node bin/translate.mjs",
-    "test": "node --test tests/helpers.test.mjs tests/detect.test.mjs tests/templates.test.mjs tests/extract.test.mjs tests/pm.test.mjs tests/init-args.test.mjs"
+    "test": "node --test tests/helpers.test.mjs tests/detect.test.mjs tests/templates.test.mjs tests/extract.test.mjs tests/pm.test.mjs tests/init-args.test.mjs tests/expo.test.mjs"
   },
   "keywords": [
     "i18n",

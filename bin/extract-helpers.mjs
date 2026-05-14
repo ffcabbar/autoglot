@@ -179,6 +179,46 @@ function textToCamelKey(text) {
   return words[0] + words.slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
 }
 
+/**
+ * Look up a value at a dotted path. Returns `undefined` if the path
+ * doesn't fully exist or hits a non-object midway.
+ */
+export function getNested(obj, dottedPath) {
+  const parts = dottedPath.split(".");
+  let cur = obj;
+  for (const k of parts) {
+    if (cur === null || typeof cur !== "object" || Array.isArray(cur)) return undefined;
+    cur = cur[k];
+  }
+  return cur;
+}
+
+/**
+ * Merge new candidate keys into an existing messages object.
+ * Returns { merged, added, skipped }:
+ *   - merged: the new object (does not mutate the input)
+ *   - added: [{key, text}] entries that were newly written
+ *   - skipped: [{key, existing, text}] entries that already had a value
+ *
+ * Existing keys are NEVER overwritten — extract --write is meant to be
+ * safe to run repeatedly without clobbering hand-curated translations.
+ */
+export function mergeKeys(existing, candidates) {
+  const merged = structuredClone(existing ?? {});
+  const added = [];
+  const skipped = [];
+  for (const cand of candidates) {
+    const current = getNested(merged, cand.key);
+    if (typeof current === "string") {
+      skipped.push({ key: cand.key, existing: current, text: cand.text });
+      continue;
+    }
+    setNested(merged, cand.key, cand.text);
+    added.push({ key: cand.key, text: cand.text });
+  }
+  return { merged, added, skipped };
+}
+
 /** Set a value at a dotted path on an object. Mutates `obj`. */
 export function setNested(obj, dottedPath, value) {
   const parts = dottedPath.split(".");

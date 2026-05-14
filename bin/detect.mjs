@@ -5,9 +5,9 @@
 
 /**
  * @typedef {{
- *   key: "nextjs-app" | "nextjs-pages" | "react-native" | "vite-react" | "vue" | "generic",
+ *   key: "nextjs-app" | "nextjs-pages" | "expo" | "react-native" | "vite-react" | "vue" | "generic",
  *   label: string,
- *   runtime: "next-intl" | "react-i18next" | "vue-i18n" | null,
+ *   runtime: "next-intl" | "next-i18next" | "react-i18next" | "vue-i18n" | null,
  *   note?: string
  * }} Framework
  */
@@ -20,12 +20,24 @@
 export function detect(pkg, present) {
   const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
 
+  // Expo before react-native: an Expo app has BOTH `expo` and `react-native` as
+  // deps, but Expo has a cleaner device-locale API (expo-localization) so we
+  // give it the dedicated template.
+  if (deps["expo"]) {
+    return {
+      key: "expo",
+      label: "Expo",
+      runtime: "react-i18next",
+      note: "Will scaffold src/i18n/index.ts with react-i18next + expo-localization for device-locale auto-detect.",
+    };
+  }
+
   if (deps["react-native"]) {
     return {
       key: "react-native",
       label: "React Native",
       runtime: "react-i18next",
-      note: "Will scaffold src/i18n/index.ts with react-i18next + AsyncStorage-aware locale init.",
+      note: "Will scaffold src/i18n/index.ts with react-i18next. Pair with react-native-localize for device locale.",
     };
   }
 

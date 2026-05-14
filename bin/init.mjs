@@ -19,12 +19,14 @@ import * as common from "./templates/common.mjs";
 import * as nextAppRouter from "./templates/nextjs-app-router.mjs";
 import * as nextPagesRouter from "./templates/nextjs-pages-router.mjs";
 import * as reactNative from "./templates/react-native.mjs";
+import * as expo from "./templates/expo.mjs";
 import * as viteReact from "./templates/vite-react.mjs";
 import * as vueI18n from "./templates/vue-i18n.mjs";
 
 const TEMPLATES = {
   "nextjs-app": nextAppRouter,
   "nextjs-pages": nextPagesRouter,
+  "expo": expo,
   "react-native": reactNative,
   "vite-react": viteReact,
   "vue": vueI18n,

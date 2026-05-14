@@ -5,8 +5,11 @@ import {
   extractCandidates,
   suggestKey,
   setNested,
+  getNested,
+  mergeKeys,
   lineFromOffset,
 } from "../bin/extract-helpers.mjs";
+import { parseExtractArgs } from "../bin/extract.mjs";
 
 describe("isLikelyUserFacing", () => {
   test("phrases with whitespace are kept", () => {
@@ -173,6 +176,83 @@ describe("setNested", () => {
     const obj = { a: "string" };
     setNested(obj, "a.b", "nested");
     assert.deepEqual(obj, { a: { b: "nested" } });
+  });
+});
+
+describe("getNested", () => {
+  test("returns nested string", () => {
+    assert.equal(getNested({ a: { b: "x" } }, "a.b"), "x");
+  });
+
+  test("returns undefined for missing path", () => {
+    assert.equal(getNested({ a: { b: "x" } }, "a.c"), undefined);
+  });
+
+  test("returns undefined when midway hits primitive", () => {
+    assert.equal(getNested({ a: "leaf" }, "a.b"), undefined);
+  });
+});
+
+describe("mergeKeys", () => {
+  test("adds new keys", () => {
+    const { merged, added, skipped } = mergeKeys({}, [
+      { key: "home.title", text: "Welcome" },
+      { key: "home.cta", text: "Get started" },
+    ]);
+    assert.deepEqual(merged, { home: { title: "Welcome", cta: "Get started" } });
+    assert.equal(added.length, 2);
+    assert.equal(skipped.length, 0);
+  });
+
+  test("skips existing string keys (never overwrites)", () => {
+    const { merged, added, skipped } = mergeKeys(
+      { home: { title: "Hoş geldin" } },
+      [
+        { key: "home.title", text: "Welcome" },        // would clobber → skip
+        { key: "home.cta", text: "Get started" },      // new → add
+      ],
+    );
+    assert.equal(merged.home.title, "Hoş geldin");
+    assert.equal(merged.home.cta, "Get started");
+    assert.equal(added.length, 1);
+    assert.equal(skipped.length, 1);
+    assert.equal(skipped[0].key, "home.title");
+    assert.equal(skipped[0].existing, "Hoş geldin");
+  });
+
+  test("doesn't mutate input", () => {
+    const input = { home: { title: "Hi" } };
+    const snapshot = JSON.stringify(input);
+    mergeKeys(input, [{ key: "home.cta", text: "Go" }]);
+    assert.equal(JSON.stringify(input), snapshot);
+  });
+
+  test("handles null / undefined existing as empty", () => {
+    const a = mergeKeys(null, [{ key: "x", text: "y" }]);
+    assert.deepEqual(a.merged, { x: "y" });
+    const b = mergeKeys(undefined, [{ key: "x", text: "y" }]);
+    assert.deepEqual(b.merged, { x: "y" });
+  });
+});
+
+describe("parseExtractArgs", () => {
+  test("defaults", () => {
+    assert.deepEqual(parseExtractArgs([]), { write: false, source: null });
+  });
+
+  test("--write turns write on", () => {
+    assert.deepEqual(parseExtractArgs(["--write"]), { write: true, source: null });
+  });
+
+  test("--source= sets target file", () => {
+    assert.deepEqual(parseExtractArgs(["--source=app/locales/en.json"]), {
+      write: false,
+      source: "app/locales/en.json",
+    });
+  });
+
+  test("unknown flags are ignored", () => {
+    assert.deepEqual(parseExtractArgs(["--future"]), { write: false, source: null });
   });
 });
 

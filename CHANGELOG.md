@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Expo support** — first-class template alongside React Native. Detected when `expo` is in dependencies (takes precedence over `react-native`, which Expo also ships). Scaffolds `src/i18n/index.ts` with `expo-localization` for device-locale auto-detect.
+- **`autoglot extract --write`** — merges discovered candidates directly into `messages/en.json`. Existing keys are **never overwritten** (extract is safe to re-run). Use `--source=<path>` to target a different file.
+- **`ROADMAP.md`** — public plan for v0.3 / v0.4 / v0.5 / v1.0 plus explicit out-of-scope list.
 - **`autoglot init --install`** — opt-in flag that installs the runtime i18n library after scaffolding, so users don't have to copy-paste a second command. Auto-detects the package manager from lockfiles (`bun.lockb` → bun, `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, otherwise npm). Override with `--pm=npm|yarn|pnpm|bun`.
 - **Interactive install prompt.** When neither `--install` nor `--no-install` is passed, `init` asks ("Install runtime packages now?", default No) so the user is in the loop. Pass `--no-install` to skip the prompt entirely (useful in CI).
 - **Graceful failure handling.** If the package manager exits non-zero (peer-dep clash, network error, etc.), `init` doesn't pretend it succeeded — it surfaces the exit code and prints the exact retry command in the "Next steps" section.

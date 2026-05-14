@@ -9,7 +9,7 @@
 // for "find me the obvious low-hanging strings" the regex approach
 // catches ~80% of real strings with very few false positives.
 
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from "node:fs";
 import { join, relative, extname, dirname } from "node:path";
 import { step, info, ok, warn, err, c } from "./prompts.mjs";
 import {
@@ -18,6 +18,7 @@ import {
   isLikelyUserFacing,
   suggestKey,
   setNested,
+  mergeKeys,
 } from "./extract-helpers.mjs";
 
 export const SCAN_EXTS = new Set([".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte"]);
@@ -27,7 +28,23 @@ export const SKIP_DIRS = new Set([
   "coverage", ".vercel", ".cache", ".parcel-cache", "out", "public",
 ]);
 
-export async function run(args) {
+/**
+ * Parse `extract`-specific flags. Unknown flags are ignored (forward-compat).
+ *
+ *   --write           merge candidates into messages/en.json (skips existing keys)
+ *   --source=<path>   override the target file (default: messages/en.json)
+ */
+export function parseExtractArgs(argv) {
+  const opts = { write: false, source: null };
+  for (const arg of argv) {
+    if (arg === "--write") opts.write = true;
+    else if (arg.startsWith("--source=")) opts.source = arg.slice("--source=".length);
+  }
+  return opts;
+}
+
+export async function run(args = []) {
+  const opts = parseExtractArgs(args);
   const cwd = process.cwd();
   step("autoglot extract");
 
@@ -88,13 +105,47 @@ export async function run(args) {
     setNested(merged, cand.key, cand.text);
   }
 
-  step("Suggested additions to messages/en.json");
-  process.stdout.write(JSON.stringify(merged, null, 2) + "\n");
+  if (!opts.write) {
+    step("Suggested additions to messages/en.json");
+    process.stdout.write(JSON.stringify(merged, null, 2) + "\n");
+  }
 
   step("Summary");
   info(`Found ${c.bold}${allCandidates.length}${c.reset} candidate${allCandidates.length === 1 ? "" : "s"} across ${c.bold}${byFile.size}${c.reset} file${byFile.size === 1 ? "" : "s"}.`);
 
+  if (opts.write) {
+    const target = opts.source || "messages/en.json";
+    const full = join(cwd, target);
+    let existing = {};
+    if (existsSync(full)) {
+      try {
+        existing = JSON.parse(readFileSync(full, "utf8"));
+      } catch (e) {
+        err(`Couldn't parse ${target}: ${e.message}. Aborting --write.`);
+        return;
+      }
+    }
+    const { merged: out, added, skipped } = mergeKeys(existing, allCandidates);
+
+    step(opts.source ? `Writing ${target}` : "Writing messages/en.json");
+    mkdirSync(dirname(full), { recursive: true });
+    writeFileSync(full, JSON.stringify(out, null, 2) + "\n");
+    ok(`${target} now has ${added.length} new key${added.length === 1 ? "" : "s"}.`);
+    if (skipped.length > 0) {
+      info(`${skipped.length} key${skipped.length === 1 ? "" : "s"} already existed and were left untouched:`);
+      for (const s of skipped.slice(0, 5)) {
+        process.stdout.write(`  ${c.dim}${s.key} (kept: ${JSON.stringify(s.existing)})${c.reset}\n`);
+      }
+      if (skipped.length > 5) {
+        process.stdout.write(`  ${c.dim}…and ${skipped.length - 5} more${c.reset}\n`);
+      }
+    }
+    step("Next");
+    info(`Review the new keys in ${c.bold}${target}${c.reset}, then replace the hardcoded string in your component with a ${c.bold}t("${c.dim}<key>${c.reset}${c.bold}")${c.reset} call.`);
+    return;
+  }
+
   step("Next");
-  info(`Review the candidates above. Copy the relevant ones into ${c.bold}messages/en.json${c.reset}, then replace the hardcoded string in your component with a ${c.bold}t("${c.dim}<key>${c.reset}${c.bold}")${c.reset} call.`);
-  info("autoglot extract is read-only by design — it never modifies your source.");
+  info(`Review the candidates above. Copy the relevant ones into ${c.bold}messages/en.json${c.reset} (or re-run with ${c.bold}--write${c.reset} to do it automatically), then replace the hardcoded string in your component with a ${c.bold}t("${c.dim}<key>${c.reset}${c.bold}")${c.reset} call.`);
+  info("Default mode is read-only. Use --write to merge into messages/en.json (existing keys are never overwritten).");
 }

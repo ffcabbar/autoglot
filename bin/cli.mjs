@@ -35,6 +35,11 @@ init flags
   --no-install                Skip the interactive install prompt.
   --pm=npm|yarn|pnpm|bun      Override the auto-detected package manager.
 
+extract flags
+  --write                     Merge candidates into messages/en.json (existing
+                              keys are never overwritten).
+  --source=<path>             Override the target file (default: messages/en.json).
+
 Translation flags (when no subcommand given)
   --check                     CI gate: exit 1 if lock != source. No AI call.
   --dry-run                   Show plan, no AI call, no writes.
