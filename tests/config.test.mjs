@@ -2,7 +2,7 @@ import { describe, test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve, isAbsolute } from "node:path";
 import {
   findConfig,
   findRepoRoot,
@@ -69,10 +69,16 @@ describe("findRepoRoot", () => {
 
 describe("resolveAgainst", () => {
   test("absolute paths pass through", () => {
-    assert.equal(resolveAgainst("/tmp", "/usr/foo"), "/usr/foo");
+    // Use a platform-native absolute path so the assertion holds on
+    // Windows too (where /usr/foo would gain a drive letter via path.resolve).
+    const abs = resolve("/usr/foo");
+    assert.equal(resolveAgainst("/tmp", abs), abs);
   });
   test("relative paths resolve against base", () => {
-    assert.equal(resolveAgainst("/tmp/base", "messages/en.json"), "/tmp/base/messages/en.json");
+    const base = resolve("/tmp/base");
+    const out = resolveAgainst(base, "messages/en.json");
+    assert.ok(isAbsolute(out), `expected absolute path, got ${out}`);
+    assert.equal(out, resolve(base, "messages/en.json"));
   });
 });
 
