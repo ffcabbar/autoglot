@@ -84,21 +84,20 @@ runs:
         #                         source branch via GITHUB_HEAD_REF instead.
         BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
         if [ -z "$BRANCH" ] || [ "$BRANCH" = "merge" ] || [[ "$BRANCH" == */merge ]]; then
-          echo "::error::Could not determine a real branch to push to (got '$BRANCH')."
-          echo "::error::On pull_request workflows, add 'ref: \${{ github.head_ref }}' to your actions/checkout step."
+          echo "::error::Could not determine a real branch to push to (got: $BRANCH)."
+          echo "::error::On pull_request workflows, set 'ref: github.head_ref' on your actions/checkout step."
+          echo "::error::See https://github.com/ffcabbar/autoglot#want-it-to-run-on-pull-requests-instead"
           exit 1
         fi
         # On pull_request, the default checkout leaves HEAD on a merge commit
-        # in detached state — pushing that as the PR's branch tip would rewrite
+        # in detached state — pushing that as the PR branch tip would rewrite
         # the PR with merge-commit garbage. Detect and surface a clear error.
         if [ -n "${GITHUB_HEAD_REF:-}" ]; then
           CURRENT="$(git symbolic-ref --quiet --short HEAD || echo '')"
           if [ -z "$CURRENT" ]; then
             echo "::error::HEAD is detached on a merge ref — autoglot can't safely push back."
-            echo "::error::Update your actions/checkout step:"
-            echo "::error::  - uses: actions/checkout@v4"
-            echo "::error::    with:"
-            echo "::error::      ref: \${{ github.head_ref }}"
+            echo "::error::Add 'ref: github.head_ref' to your actions/checkout step."
+            echo "::error::See https://github.com/ffcabbar/autoglot#want-it-to-run-on-pull-requests-instead"
             exit 1
           fi
         fi

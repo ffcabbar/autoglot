@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-05-16
+
+### Fixed
+
+- **Action commit step: bash syntax error from leaked `\${{ ... }}` escape.** v0.3.2's `pull_request` fix included `\${{ github.head_ref }}` in two `echo "::error::..."` lines, meant to be a literal pointer to the right checkout config. The runner's template engine doesn't honor `\${{` as an escape inside `run:` blocks; it stripped the expression and left a stray `\` at the end of a double-quoted string (`"::error::      ref: \"`). Bash then saw an open string, kept reading subsequent lines, and choked on the next `(` it found — surfacing as `line 36: syntax error near unexpected token \`(\``. Fix: drop the literal `${{ ... }}` from echo output, point users at the README anchor instead.
+
 ## [0.3.2] - 2026-05-16
 
 ### Fixed
