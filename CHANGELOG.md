@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-05-16
+
+### Fixed
+
+- **GitHub Action: `pull_request` event support.** The push step was hardcoded to use `GITHUB_REF_NAME`, which on `pull_request` events is a synthetic merge ref like `10/merge` that doesn't exist on the remote. Translations would succeed, the bot would commit locally, then push would fail with `fatal: couldn't find remote ref 10/merge`. Action now uses `GITHUB_HEAD_REF` (the PR's source branch) when present and falls back to `GITHUB_REF_NAME` for `push` events.
+- **Detached-HEAD guard for `pull_request` workflows.** If `actions/checkout` runs with its default `ref` on a `pull_request` event, HEAD lands on the merge commit in detached state; pushing that would replace the PR branch with merge-commit garbage. The action now detects this and prints a clear error pointing to the fix (`ref: ${{ github.head_ref }}` in the checkout step).
+- **`gh pr comment` step** also uses the resolved branch so PR comments find the right PR on `pull_request` runs.
+
+### Documented
+
+- README now includes a `pull_request` workflow example with the required `ref: ${{ github.head_ref }}` in `actions/checkout`.
+
 ## [0.3.1] - 2026-05-15
 
 Bug-fix release driven by real-world testing on a monorepo (Expo app inside `apps/mobile/`). All six issues were reproduced against autoglot@0.3.0 and now ship with regression coverage.

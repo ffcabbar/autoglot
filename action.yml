@@ -77,6 +77,31 @@ runs:
           echo "changed=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi
+        # Pick the branch we should push to:
+        #   - push event:         GITHUB_REF_NAME is the branch name (e.g. "main")
+        #   - pull_request event: GITHUB_REF_NAME is "<N>/merge" (a synthetic ref
+        #                         that doesn't exist on the remote). Use the PR's
+        #                         source branch via GITHUB_HEAD_REF instead.
+        BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+        if [ -z "$BRANCH" ] || [ "$BRANCH" = "merge" ] || [[ "$BRANCH" == */merge ]]; then
+          echo "::error::Could not determine a real branch to push to (got '$BRANCH')."
+          echo "::error::On pull_request workflows, add 'ref: \${{ github.head_ref }}' to your actions/checkout step."
+          exit 1
+        fi
+        # On pull_request, the default checkout leaves HEAD on a merge commit
+        # in detached state — pushing that as the PR's branch tip would rewrite
+        # the PR with merge-commit garbage. Detect and surface a clear error.
+        if [ -n "${GITHUB_HEAD_REF:-}" ]; then
+          CURRENT="$(git symbolic-ref --quiet --short HEAD || echo '')"
+          if [ -z "$CURRENT" ]; then
+            echo "::error::HEAD is detached on a merge ref — autoglot can't safely push back."
+            echo "::error::Update your actions/checkout step:"
+            echo "::error::  - uses: actions/checkout@v4"
+            echo "::error::    with:"
+            echo "::error::      ref: \${{ github.head_ref }}"
+            exit 1
+          fi
+        fi
         {
           echo "chore(i18n): update translations"
           echo
@@ -85,8 +110,8 @@ runs:
         git commit -F "${{ runner.temp }}/translate-commit-msg.txt"
         for attempt in 1 2 3; do
           git rebase --abort 2>/dev/null || true
-          if git pull --rebase origin "${GITHUB_REF_NAME}" \
-            && git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"; then
+          if git pull --rebase origin "$BRANCH" \
+            && git push origin "HEAD:refs/heads/$BRANCH"; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -103,7 +128,8 @@ runs:
         GH_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
-        PR=$(gh pr list --head "${GITHUB_REF_NAME}" --state open \
+        BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+        PR=$(gh pr list --head "$BRANCH" --state open \
           --json number --jq '.[0].number // empty')
         if [ -z "${PR}" ]; then
           echo "No open PR for ${GITHUB_REF_NAME} — skipping comment."

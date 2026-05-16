@@ -1,6 +1,6 @@
 {
   "name": "autoglot",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "AI-powered i18n translation bot. Diff your en.json on every push, translate only what changed, commit the JSON files back. MIT alternative to Languine, Lokalise, and Crowdin.",
   "type": "module",
   "bin": {

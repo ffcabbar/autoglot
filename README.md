@@ -160,6 +160,33 @@ jobs:
 
 Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json`, create one empty `messages/<locale>.json` per language. On every push the bot will diff, translate, commit the diff back, and post a cost summary.
 
+### Want it to run on pull requests instead?
+
+Switch the trigger to `pull_request` and tell `actions/checkout` to use the PR's source branch (otherwise the runner checks out a synthetic merge ref that the bot can't push back to):
+
+```yaml
+on:
+  pull_request:
+    paths:
+      - messages/en.json
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}   # ← required for pull_request runs
+      - uses: ffcabbar/autoglot@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+The action detects pull_request events automatically and pushes translations to the PR's source branch. If you forget the `ref:` line, autoglot prints an error explaining how to fix it instead of silently doing the wrong thing.
+
 ## Quickstart — CLI (no GitHub)
 
 ```bash
