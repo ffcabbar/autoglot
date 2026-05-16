@@ -47,6 +47,7 @@ import {
   pickAllowedSource,
   pLimit,
 } from "./helpers.mjs";
+import { resolvePaths } from "./config.mjs";
 
 // --- Constants ------------------------------------------------------------
 const HELP_TEXT = `autoglot — AI-powered i18n translation bot
@@ -104,13 +105,18 @@ if (args.help || args.h) {
   process.exit(0);
 }
 
-const CONFIG_PATH = resolvePath(args.config || "translate.config.json");
-
-const config = loadConfig(CONFIG_PATH);
-
-const SOURCE_FILE = resolvePath(args.source || config.source || "messages/en.json");
-const MESSAGES_DIR = resolvePath(args["messages-dir"] || config.messagesDir || "messages");
-const LOCK_FILE = resolvePath(args["lock-file"] || config.lockFile || "translate.lock");
+let __paths;
+try {
+  __paths = resolvePaths(args, CWD);
+} catch (err) {
+  console.error(`[translate] ${err.message}`);
+  process.exit(1);
+}
+const CONFIG_PATH = __paths.configPath || resolvePath(args.config || "translate.config.json");
+const config = __paths.config || { namespaces: {} };
+const SOURCE_FILE = __paths.source;
+const MESSAGES_DIR = __paths.messagesDir;
+const LOCK_FILE = __paths.lockFile;
 const SUMMARY_FILE = args["summary-path"]
   ? resolvePath(args["summary-path"])
   : join(tmpdir(), "translate-summary.md");
@@ -378,19 +384,8 @@ function loadLock() {
   return parseLockYaml(readFileSync(LOCK_FILE, "utf8"), SOURCE_FILE);
 }
 
-function loadConfig(p) {
-  if (!existsSync(p)) return { namespaces: {} };
-  try {
-    const parsed = JSON.parse(readFileSync(p, "utf8"));
-    return {
-      ...parsed,
-      namespaces: parsed.namespaces || {},
-    };
-  } catch (err) {
-    console.error(`[translate] Failed to parse ${p}: ${err.message}`);
-    process.exit(1);
-  }
-}
+// loadConfig moved to ./config.mjs (shared with add/doctor; resolves
+// config-relative paths so monorepo invocations work from any subdir).
 
 function discoverTargetLocales() {
   if (!existsSync(MESSAGES_DIR)) return [];

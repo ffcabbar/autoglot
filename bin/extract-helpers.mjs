@@ -96,20 +96,48 @@ export function lineFromOffset(code, offset) {
   return line;
 }
 
+// Code-shaped tokens that don't appear in real UI copy. The pattern that
+// false-positives the most: regex catches text between `<...>` brackets,
+// but TS generics (useRef<T>(null)) and intersection types look the same.
+// If ANY of these substrings appear, reject.
+const CODE_TOKEN_DENYLIST = [
+  "=>", ";", "===", "!==", "&&", "||", "??",
+  "const ", "let ", "var ", "function ", "return ", " as ",
+  "useRef", "useState", "useEffect", "useMemo", "useCallback",
+  "useSharedValue", "useDerivedValue", "useAnimatedRef", "useAnimatedStyle",
+  "Math.", "JSON.", "Object.", "Array.",
+  "props.", "this.", "<= ", ">= ", "== ", "!= ",
+  "console.", "process.", "Promise.",
+];
+
+// Type names that show up bare between generic brackets. These aren't
+// user-facing strings even when they pass other heuristics.
+const BARE_TYPE_DENYLIST = new Set([
+  "Promise", "void", "null", "undefined", "any", "never", "unknown",
+  "Required", "Partial", "Record", "Pick", "Omit", "Readonly", "Exclude",
+  "Map", "Set", "Array", "ReadonlyArray", "Iterable", "AsyncIterable",
+  "ReactNode", "ReactElement", "ReactChild", "FunctionComponent",
+  "StyleProp", "SharedValue", "DerivedValue", "AnimatedRef",
+  "React.ReactNode", "React.ReactElement", "React.FunctionComponent",
+  "React.FC", "React.ComponentType",
+]);
+
 /**
  * Heuristic: is this string something a user actually sees?
  * Conservative — better to miss a real one than flag 100 false positives.
  *
  * Keep:
- *   - Anything with a space ("Get started", "Click to continue")
- *   - Strings starting with a capital letter that look like a sentence/word
+ *   - Anything with a space that doesn't look like code ("Get started")
+ *   - Single words starting with a capital letter ("Submit", "Cancel")
  *
  * Skip:
  *   - Empty / very short / pure punctuation
  *   - All-digit / pure numeric formatting
  *   - URLs, paths, file extensions
- *   - Identifier-like (lowercase with dashes/underscores, no spaces) — likely CSS classes / tokens
- *   - Pure symbol strings ("→", "&copy;")
+ *   - Identifier-like (lowercase with dashes/underscores, no spaces)
+ *   - Code-shaped tokens (TS generics, comparison expressions, hook calls)
+ *   - Bare type names (Promise, void, ReactNode, etc.)
+ *   - Strings starting with `(`, `[`, `=`, `&`, `|`, `;`, `,`, `.`, `:`, `>` or a digit
  */
 export function isLikelyUserFacing(text) {
   if (!text || text.length < 2) return false;
@@ -121,21 +149,33 @@ export function isLikelyUserFacing(text) {
   if (/^\//.test(text) || /^\.\.?\//.test(text)) return false;      // paths
   if (/^[a-zA-Z][\w-]*\.(json|tsx?|jsx?|css|svg|png|jpg|gif|md|yml|yaml)$/i.test(text)) return false; // filenames
 
-  // Has whitespace = almost certainly user-facing copy.
-  if (/\s/.test(text)) return true;
-
-  // Single word: must start with a letter (kicks out "&copy;", "→", "©2026", etc.)
+  // Doesn't start with a letter → likely a code fragment leaked from `<...>`.
+  // (Real UI copy starts with a letter or with whitespace stripped to one.)
   if (!/^[A-Za-z]/.test(text)) return false;
 
-  // Identifier-pattern (lowercase + dashes/underscores/digits, no caps,
-  // no whitespace) → likely a CSS class, token, or variable name.
+  // Bare type names from TS generics.
+  if (BARE_TYPE_DENYLIST.has(text)) return false;
+
+  // Code-shaped tokens anywhere in the candidate.
+  for (const tok of CODE_TOKEN_DENYLIST) {
+    if (text.includes(tok)) return false;
+  }
+
+  // Has whitespace AND survived the code-token check → user copy.
+  if (/\s/.test(text)) return true;
+
+  // Single word: identifier pattern → reject.
   if (/^[a-z][\w-]*$/.test(text)) return false;
 
-  // ALL_CAPS or SCREAMING_SNAKE_CASE → constants, not copy.
+  // ALL_CAPS or SCREAMING_SNAKE_CASE → constants.
   if (/^[A-Z_]+$/.test(text)) return false;
 
-  // Anything else starting with a letter (e.g. "Submit", "Welcome!", "Hi-five")
-  // is likely user-facing single-word copy.
+  // camelCase / PascalCase with junk like "eStatusCompleted", "sCompleteonboardingConst"
+  // → reject if last 1-3 chars look like a leaked TS suffix.
+  // Conservative: only allow single-word candidates with no caps inside.
+  // (i.e. "Submit" yes, "submitBtn" no.)
+  if (/[A-Z]/.test(text.slice(1))) return false;
+
   return true;
 }
 
@@ -157,15 +197,32 @@ function pathToNamespace(relPath) {
   // Strip extension
   let p = relPath.replace(/\.(tsx?|jsx?|vue|svelte)$/, "");
   // Strip conventional prefixes
-  p = p.replace(/^(?:src\/)?(?:app\/|components\/|pages\/|screens\/)?/, "");
-  // Bracketed Next.js segments: drop them (e.g. [locale])
+  p = p.replace(/^(?:src\/)?(?:app\/|components\/|pages\/|screens\/|hooks\/|services\/|lib\/|utils\/)?/, "");
+  // Bracketed Next.js segments: drop them (e.g. [locale], [...slug])
   p = p.replace(/\[[^\]]+\]\/?/g, "");
-  // Drop trailing or whole-path "page" / "index" / "layout".
-  // Matches "page", "/page", "foo/page" — leaves "foo".
-  p = p.replace(/(^|\/)(page|index|layout)$/, "");
-  // Slashes → dots
-  p = p.replace(/\/+/g, ".").replace(/^\.+|\.+$/g, "");
+  // Parenthesized Expo Router groups: strip the parens, keep the name
+  // ("(onboarding)/age" → "onboarding/age")
+  p = p.replace(/\(([^)]+)\)/g, "$1");
+  // Drop trailing or whole-path "page" / "index" / "layout" / "_layout".
+  p = p.replace(/(^|\/)(page|index|_?layout)$/, "");
+  // Normalize each segment: dashes/underscores → camelCase, strip non-identifier
+  p = p.split("/").filter(Boolean).map(sanitizeSegment).filter(Boolean).join(".");
   return p;
+}
+
+function sanitizeSegment(seg) {
+  // "journal-upload" → "journalUpload", "apple_intel" → "appleIntel"
+  const parts = seg.split(/[-_]+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  const head = parts[0].replace(/[^a-zA-Z0-9]/g, "");
+  const tail = parts.slice(1).map((w) => {
+    const clean = w.replace(/[^a-zA-Z0-9]/g, "");
+    return clean ? clean[0].toUpperCase() + clean.slice(1) : "";
+  }).join("");
+  let out = head + tail;
+  // Prefix `_` if digit-leading so it's a valid JS identifier.
+  if (/^\d/.test(out)) out = "_" + out;
+  return out;
 }
 
 function textToCamelKey(text) {
@@ -176,7 +233,10 @@ function textToCamelKey(text) {
     .filter(Boolean)
     .slice(0, 3);
   if (words.length === 0) return "key";
-  return words[0] + words.slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
+  let key = words[0] + words.slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
+  // Prefix `_` if digit-leading so it's a valid JS identifier.
+  if (/^\d/.test(key)) key = "_" + key;
+  return key;
 }
 
 /**
@@ -195,19 +255,32 @@ export function getNested(obj, dottedPath) {
 
 /**
  * Merge new candidate keys into an existing messages object.
- * Returns { merged, added, skipped }:
+ * Returns { merged, added, skipped, conflicts }:
  *   - merged: the new object (does not mutate the input)
  *   - added: [{key, text}] entries that were newly written
  *   - skipped: [{key, existing, text}] entries that already had a value
+ *   - conflicts: [{key, kind, text}] entries blocked by namespace/leaf shape
  *
  * Existing keys are NEVER overwritten — extract --write is meant to be
  * safe to run repeatedly without clobbering hand-curated translations.
+ *
+ * Shape conflicts (the #7 silent-corruption class) are detected and refused:
+ *   - kind="leaf-vs-namespace": existing path `a.b` is a string but candidate
+ *     wants to write `a.b.c` — would replace string with object.
+ *   - kind="namespace-vs-leaf": existing path `a.b` is an object but candidate
+ *     wants to write `a.b` as a string — would silently delete `a.b.*`.
  */
 export function mergeKeys(existing, candidates) {
   const merged = structuredClone(existing ?? {});
   const added = [];
   const skipped = [];
+  const conflicts = [];
   for (const cand of candidates) {
+    const conflict = detectShapeConflict(merged, cand.key);
+    if (conflict) {
+      conflicts.push({ key: cand.key, kind: conflict, text: cand.text });
+      continue;
+    }
     const current = getNested(merged, cand.key);
     if (typeof current === "string") {
       skipped.push({ key: cand.key, existing: current, text: cand.text });
@@ -216,7 +289,35 @@ export function mergeKeys(existing, candidates) {
     setNested(merged, cand.key, cand.text);
     added.push({ key: cand.key, text: cand.text });
   }
-  return { merged, added, skipped };
+  return { merged, added, skipped, conflicts };
+}
+
+/**
+ * Check whether writing `dottedPath = <string>` into `obj` would clobber
+ * a non-string node, in either direction.
+ *
+ * Returns null (safe), "leaf-vs-namespace" (an ancestor is already a
+ * string), or "namespace-vs-leaf" (the target is already an object).
+ */
+export function detectShapeConflict(obj, dottedPath) {
+  const parts = dottedPath.split(".");
+  let cur = obj;
+  // Walk ancestors. If we hit a non-object before reaching the leaf,
+  // it's a leaf-vs-namespace conflict (existing string blocks a deeper key).
+  for (let i = 0; i < parts.length - 1; i++) {
+    const k = parts[i];
+    const next = cur?.[k];
+    if (next === undefined) return null;  // free space, fine
+    if (typeof next !== "object" || next === null || Array.isArray(next)) {
+      return "leaf-vs-namespace";
+    }
+    cur = next;
+  }
+  const leaf = cur?.[parts[parts.length - 1]];
+  if (leaf === undefined) return null;
+  if (typeof leaf === "string") return null;  // mergeKeys handles this as "skipped"
+  // It's an object/array — writing a string here would delete its contents.
+  return "namespace-vs-leaf";
 }
 
 /** Set a value at a dotted path on an object. Mutates `obj`. */

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-15
+
+Bug-fix release driven by real-world testing on a monorepo (Expo app inside `apps/mobile/`). All six issues were reproduced against autoglot@0.3.0 and now ship with regression coverage.
+
+### Fixed
+
+- **Monorepo: `add` and `doctor` now accept `--source` / `--messages-dir` / `--lock-file` / `--config` flags** (#3). Previously only the translate path honored these, so app-directory invocations couldn't override paths.
+- **Monorepo: config-file values resolve against the config file's directory, not CWD** (#4). A `translate.config.json` inside `apps/mobile/` saying `"source": "messages/en.json"` now means `apps/mobile/messages/en.json` regardless of where you invoke from. Mirrors how eslint, vitest, tsconfig, prettier behave. CLI flag overrides still resolve against CWD (POSIX convention).
+- **Monorepo: `doctor` walks up to the repo root and scans every `.github/workflows/*.{yml,yaml}` for one that uses `ffcabbar/autoglot`** (#5). Previously only matched a workflow named exactly `translate.yml` at `CWD/.github/workflows/`, so monorepos with per-app workflows (`translate-mobile.yml`, `translate-web.yml`) were silently misdiagnosed.
+- **`extract` no longer mis-reads TypeScript generics as JSX text** (#6). Added a code-token denylist (`useRef`, `useState`, `useSharedValue`, `=>`, `&&`, `||`, `=== `, etc.), a bare-type denylist (`Promise`, `void`, `ReactNode`, `StyleProp`, `SharedValue`, …), and stricter shape rules: candidates can't start with `(`, `[`, `=`, `&`, `|`, `;`, digits, etc. False-positive rate on TS/RN/Expo codebases drops dramatically. (AST-based extraction would eliminate it entirely; out of scope for v0.3 — zero deps stays.)
+- **`extract --write` no longer silently corrupts existing namespaces** (#7). Detects two classes of shape conflict before writing:
+  - `namespace-vs-leaf`: candidate `settings.language` would replace the existing `settings.language` object (and silently delete its children). REFUSED.
+  - `leaf-vs-namespace`: candidate `a.b.c` when `a.b` is already a string. REFUSED.
+  Both classes are surfaced in the user-facing summary alongside `added` and `skipped` counts.
+- **`extract` produces cleaner keys** (#8). Expo Router `(group)` parentheses are stripped (`(onboarding)/age.tsx` → `onboarding.age.*`); dashed path segments become camelCase (`journal-upload` → `journalUpload`); `_layout`/`layout`/`index`/`page` segments are dropped; digit-leading keys get a `_` prefix to stay valid identifiers; `hooks/`/`services/`/`lib/`/`utils/` prefixes are stripped like `src/`/`app/`.
+
+### Changed
+
+- New shared module `bin/config.mjs` centralizes config loading, `findConfig` walk-up, and path resolution. `add.mjs`, `doctor.mjs`, and `translate.mjs` all use it now — no behavior drift across subcommands.
+
+### Added
+
+- 38 new unit tests covering all six fixes (full suite: 166/166 green).
+- New integration smoke script (`tmp/autoglot-monorepo-smoke.sh`-style) verifying all six issues end-to-end in a simulated monorepo layout — 13/13 green, 0 regressions on the existing 82 framework smoke tests.
+
 ## [0.3.0] - 2026-05-14
 
 ### Added

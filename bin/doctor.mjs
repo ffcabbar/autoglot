@@ -4,88 +4,100 @@
 // fail at 2am. Read-only — never writes or modifies anything.
 
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
-import { ok, warn, err, info, step, c } from "./prompts.mjs";
+import { join, relative, basename } from "node:path";
+import { ok, warn, err, info, step } from "./prompts.mjs";
+import { resolvePaths, parseSharedFlags, findRepoRoot } from "./config.mjs";
 
-export async function run() {
+export async function run(argv = []) {
+  const { args } = parseSharedFlags(argv);
   const cwd = process.cwd();
   step("autoglot doctor");
 
   let warnings = 0;
   let errors = 0;
 
-  function pass(msg) { ok(msg); }
   function w(msg) { warn(msg); warnings++; }
   function e(msg) { err(msg); errors++; }
 
+  let paths;
+  try {
+    paths = resolvePaths(args, cwd);
+  } catch (errObj) {
+    e(errObj.message);
+    process.exit(1);
+  }
+
   // 1. translate.config.json
-  let cfg = null;
-  const cfgPath = join(cwd, "translate.config.json");
-  if (existsSync(cfgPath)) {
-    try {
-      cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
-      pass("translate.config.json found and parses.");
-    } catch (err) {
-      e(`translate.config.json failed to parse: ${err.message}`);
-    }
+  if (paths.configPath) {
+    ok(`${relative(cwd, paths.configPath) || paths.configPath} found and parses.`);
   } else {
-    w("translate.config.json not found — autoglot will use defaults. Consider \`autoglot init\`.");
+    w("translate.config.json not found — autoglot will use defaults. Consider `autoglot init`.");
   }
 
   // 2. Source file
-  const messagesDir = cfg?.messagesDir || "messages";
-  const sourcePath = cfg?.source || join(messagesDir, "en.json");
-  if (existsSync(join(cwd, sourcePath))) {
-    let sourceObj;
+  const sourceDisplay = relative(cwd, paths.source) || paths.source;
+  if (existsSync(paths.source)) {
     try {
-      sourceObj = JSON.parse(readFileSync(join(cwd, sourcePath), "utf8"));
+      const sourceObj = JSON.parse(readFileSync(paths.source, "utf8"));
       const keys = countLeafKeys(sourceObj);
-      if (keys === 0) w(`${sourcePath} has no keys yet. Add your strings before running autoglot.`);
-      else pass(`${sourcePath} parses with ${keys} key${keys === 1 ? "" : "s"}.`);
-    } catch (err) {
-      e(`${sourcePath} failed to parse: ${err.message}`);
+      if (keys === 0) w(`${sourceDisplay} has no keys yet. Add your strings before running autoglot.`);
+      else ok(`${sourceDisplay} parses with ${keys} key${keys === 1 ? "" : "s"}.`);
+    } catch (errObj) {
+      e(`${sourceDisplay} failed to parse: ${errObj.message}`);
     }
   } else {
-    e(`Source file ${sourcePath} not found.`);
+    e(`Source file ${sourceDisplay} not found.`);
   }
 
   // 3. Target locales
-  const messagesFull = join(cwd, messagesDir);
-  if (existsSync(messagesFull) && statSync(messagesFull).isDirectory()) {
-    const sourceBase = sourcePath.replace(`${messagesDir}/`, "").replace(".json", "");
-    const targets = readdirSync(messagesFull)
-      .filter((f) => f.endsWith(".json") && f !== `${sourceBase}.json`);
+  if (existsSync(paths.messagesDir) && statSync(paths.messagesDir).isDirectory()) {
+    const sourceBase = basename(paths.source);
+    const targets = readdirSync(paths.messagesDir)
+      .filter((f) => f.endsWith(".json") && f !== sourceBase);
     if (targets.length === 0) {
-      w(`No target locale files in ${messagesDir}/. Add some with \`autoglot add <locale>\`.`);
+      w(`No target locale files in ${relative(cwd, paths.messagesDir) || paths.messagesDir}/. Add some with \`autoglot add <locale>\`.`);
     } else {
-      pass(`${targets.length} target locale${targets.length === 1 ? "" : "s"}: ${targets.map((f) => f.replace(".json", "")).join(", ")}`);
+      ok(`${targets.length} target locale${targets.length === 1 ? "" : "s"}: ${targets.map((f) => f.replace(".json", "")).join(", ")}`);
     }
   }
 
-  // 4. Workflow
-  const workflowPath = join(cwd, ".github/workflows/translate.yml");
-  if (existsSync(workflowPath)) {
-    const workflow = readFileSync(workflowPath, "utf8");
-    if (workflow.includes("ffcabbar/autoglot")) {
-      pass(".github/workflows/translate.yml uses ffcabbar/autoglot.");
-    } else {
-      w(".github/workflows/translate.yml exists but doesn't reference ffcabbar/autoglot.");
+  // 4. Workflow — walk up to repo root, scan all .github/workflows/*.{yml,yaml}
+  // for one that uses the action. Falls back to local .github/workflows/ if
+  // not in a git repo.
+  const workflowSearchRoot = findRepoRoot(cwd) || cwd;
+  const workflowsDir = join(workflowSearchRoot, ".github/workflows");
+  let foundWorkflow = null;
+  if (existsSync(workflowsDir) && statSync(workflowsDir).isDirectory()) {
+    const files = readdirSync(workflowsDir).filter((f) => /\.ya?ml$/.test(f));
+    for (const f of files) {
+      try {
+        const txt = readFileSync(join(workflowsDir, f), "utf8");
+        if (/\bffcabbar\/autoglot\b/.test(txt)) {
+          foundWorkflow = { path: join(workflowsDir, f), content: txt };
+          break;
+        }
+      } catch {/* skip unreadable */}
     }
-    if (workflow.includes("ANTHROPIC_API_KEY")) {
-      pass("Workflow references ANTHROPIC_API_KEY secret.");
+  }
+
+  if (foundWorkflow) {
+    ok(`Workflow ${relative(cwd, foundWorkflow.path) || foundWorkflow.path} uses ffcabbar/autoglot.`);
+    if (foundWorkflow.content.includes("ANTHROPIC_API_KEY")) {
+      ok("Workflow references ANTHROPIC_API_KEY secret.");
     } else {
       w("Workflow doesn't reference ANTHROPIC_API_KEY. autoglot will fail without it.");
     }
+  } else if (existsSync(workflowsDir)) {
+    w(`No workflow in ${relative(cwd, workflowsDir) || workflowsDir}/ references ffcabbar/autoglot. Run \`autoglot init\` or add one manually.`);
   } else {
-    w(".github/workflows/translate.yml not found. Run \`autoglot init\` to create one, or add the workflow manually.");
+    w(`.github/workflows/ not found at ${relative(cwd, workflowSearchRoot) || workflowSearchRoot}. Run \`autoglot init\` to create one.`);
   }
 
   // 5. lock file format (if exists)
-  const lockPath = join(cwd, cfg?.lockFile || "translate.lock");
-  if (existsSync(lockPath)) {
-    const txt = readFileSync(lockPath, "utf8");
+  if (existsSync(paths.lockFile)) {
+    const txt = readFileSync(paths.lockFile, "utf8");
     if (/^version:\s*1\b/m.test(txt)) {
-      pass("translate.lock has version 1 header.");
+      ok("translate.lock has version 1 header.");
     } else {
       w("translate.lock exists but doesn't look like an autoglot lock file.");
     }
@@ -93,7 +105,7 @@ export async function run() {
 
   // 6. ANTHROPIC_API_KEY in env (only relevant for local runs)
   if (process.env.ANTHROPIC_API_KEY) {
-    pass("ANTHROPIC_API_KEY set in current shell.");
+    ok("ANTHROPIC_API_KEY set in current shell.");
   } else {
     info("ANTHROPIC_API_KEY not set in this shell — fine for CI; only needed for local runs.");
   }

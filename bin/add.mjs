@@ -3,36 +3,35 @@
 // Creates an empty messages/<locale>.json. The next push to en.json will
 // populate it. Idempotent: if the file already exists, we leave it alone.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
-import { info, ok, warn, err, step, c } from "./prompts.mjs";
+import { writeFileSync, existsSync } from "node:fs";
+import { join, relative, basename } from "node:path";
+import { info, ok, warn, err, step } from "./prompts.mjs";
+import { resolvePaths, parseSharedFlags } from "./config.mjs";
 
-export async function run(args) {
-  const positional = args.filter((a) => !a.startsWith("-"));
+export async function run(argv = []) {
+  const { args, positional } = parseSharedFlags(argv);
   if (positional.length === 0) {
     err("Usage: autoglot add <locale> [<locale>...]");
-    err('Example: autoglot add tr ja zh');
+    err("Example: autoglot add tr ja zh");
     process.exit(1);
   }
 
   const cwd = process.cwd();
   step("autoglot add");
 
-  // Try to read messagesDir from translate.config.json
-  let messagesDir = "messages";
-  const cfgPath = join(cwd, "translate.config.json");
-  if (existsSync(cfgPath)) {
-    try {
-      const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
-      if (cfg.messagesDir) messagesDir = cfg.messagesDir;
-    } catch {/* ignore */}
-  } else {
+  let paths;
+  try {
+    paths = resolvePaths(args, cwd);
+  } catch (e) {
+    err(e.message);
+    process.exit(1);
+  }
+  if (!paths.config) {
     warn("translate.config.json not found — using default messages/ dir. Run `autoglot init` first if this is a new project.");
   }
 
-  const sourcePath = join(cwd, messagesDir, "en.json");
-  if (!existsSync(sourcePath)) {
-    err(`Source file ${messagesDir}/en.json not found. Run \`autoglot init\` first.`);
+  if (!existsSync(paths.source)) {
+    err(`Source file ${relative(cwd, paths.source) || paths.source} not found. Run \`autoglot init\` first.`);
     process.exit(1);
   }
 
@@ -43,14 +42,15 @@ export async function run(args) {
       warn(`"${code}" doesn't look like an ISO locale code. Skipping.`);
       continue;
     }
-    const localePath = join(cwd, messagesDir, `${code}.json`);
+    const localePath = join(paths.messagesDir, `${code}.json`);
+    const displayPath = relative(cwd, localePath) || localePath;
     if (existsSync(localePath)) {
-      info(`${messagesDir}/${code}.json already exists — leaving it alone.`);
+      info(`${displayPath} already exists — leaving it alone.`);
       already++;
       continue;
     }
     writeFileSync(localePath, "{}\n");
-    ok(`${messagesDir}/${code}.json`);
+    ok(displayPath);
     added++;
   }
 

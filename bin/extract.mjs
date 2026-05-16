@@ -125,20 +125,33 @@ export async function run(args = []) {
         return;
       }
     }
-    const { merged: out, added, skipped } = mergeKeys(existing, allCandidates);
+    const { merged: out, added, skipped, conflicts } = mergeKeys(existing, allCandidates);
 
     step(opts.source ? `Writing ${target}` : "Writing messages/en.json");
     mkdirSync(dirname(full), { recursive: true });
     writeFileSync(full, JSON.stringify(out, null, 2) + "\n");
     ok(`${target} now has ${added.length} new key${added.length === 1 ? "" : "s"}.`);
     if (skipped.length > 0) {
-      info(`${skipped.length} key${skipped.length === 1 ? "" : "s"} already existed and were left untouched:`);
+      info(`${skipped.length} key${skipped.length === 1 ? "" : "s"} already existed (same path) and were left untouched:`);
       for (const s of skipped.slice(0, 5)) {
         process.stdout.write(`  ${c.dim}${s.key} (kept: ${JSON.stringify(s.existing)})${c.reset}\n`);
       }
       if (skipped.length > 5) {
         process.stdout.write(`  ${c.dim}…and ${skipped.length - 5} more${c.reset}\n`);
       }
+    }
+    if (conflicts.length > 0) {
+      warn(`${conflicts.length} candidate${conflicts.length === 1 ? "" : "s"} skipped due to namespace/leaf shape conflicts:`);
+      for (const cn of conflicts.slice(0, 5)) {
+        const note = cn.kind === "leaf-vs-namespace"
+          ? "an ancestor is already a string"
+          : "the target is already a namespace (writing would delete children)";
+        process.stdout.write(`  ${c.dim}${cn.key} — ${note}${c.reset}\n`);
+      }
+      if (conflicts.length > 5) {
+        process.stdout.write(`  ${c.dim}…and ${conflicts.length - 5} more${c.reset}\n`);
+      }
+      info("Rename the candidate keys (or the existing entry) to resolve.");
     }
     step("Next");
     info(`Review the new keys in ${c.bold}${target}${c.reset}, then replace the hardcoded string in your component with a ${c.bold}t("${c.dim}<key>${c.reset}${c.bold}")${c.reset} call.`);

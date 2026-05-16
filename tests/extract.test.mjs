@@ -7,6 +7,7 @@ import {
   setNested,
   getNested,
   mergeKeys,
+  detectShapeConflict,
   lineFromOffset,
 } from "../bin/extract-helpers.mjs";
 import { parseExtractArgs } from "../bin/extract.mjs";
@@ -176,6 +177,150 @@ describe("setNested", () => {
     const obj = { a: "string" };
     setNested(obj, "a.b", "nested");
     assert.deepEqual(obj, { a: { b: "nested" } });
+  });
+});
+
+describe("isLikelyUserFacing — TS-heavy false positives (issue #6)", () => {
+  test("rejects TS generic body splash", () => {
+    // useState<T | null>(null) → regex catches "(null); const useFoo = useRef"
+    assert.equal(isLikelyUserFacing("(null); const sessionElapsedRef = useRef"), false);
+  });
+
+  test("rejects bare type names", () => {
+    assert.equal(isLikelyUserFacing("Promise"), false);
+    assert.equal(isLikelyUserFacing("void"), false);
+    assert.equal(isLikelyUserFacing("ReactNode"), false);
+    assert.equal(isLikelyUserFacing("StyleProp"), false);
+    assert.equal(isLikelyUserFacing("SharedValue"), false);
+    assert.equal(isLikelyUserFacing("React.FunctionComponent"), false);
+  });
+
+  test("rejects comparison expressions", () => {
+    assert.equal(isLikelyUserFacing("= 0 && index"), false);
+    assert.equal(isLikelyUserFacing("= 13 && parsedAge"), false);
+    assert.equal(isLikelyUserFacing("= sentences[i].startTime && position"), false);
+  });
+
+  test("rejects intersection / union type fragments", () => {
+    assert.equal(isLikelyUserFacing("& React.FunctionComponent"), false);
+    assert.equal(isLikelyUserFacing("; readonly cornerSmoothing?: number | SharedValue"), false);
+    assert.equal(isLikelyUserFacing("void; width?: number | string; height?: number"), false);
+  });
+
+  test("keeps real user copy that contains common words", () => {
+    assert.equal(isLikelyUserFacing("Get started"), true);
+    assert.equal(isLikelyUserFacing("Welcome back"), true);
+    assert.equal(isLikelyUserFacing("Please enter your email"), true);
+    assert.equal(isLikelyUserFacing("Submit"), true);
+  });
+
+  test("rejects camelCase identifiers leaked from code", () => {
+    // "submitBtn", "eStatusCompleted" — camelCase = code, not copy
+    assert.equal(isLikelyUserFacing("submitBtn"), false);
+    assert.equal(isLikelyUserFacing("eStatusCompleted"), false);
+  });
+});
+
+describe("suggestKey — path sanitization (issue #8)", () => {
+  test("strips Expo Router (group) parentheses", () => {
+    // (onboarding)/age.tsx → onboarding.age.<word>
+    assert.equal(suggestKey("How old are you?", "src/app/(onboarding)/age.tsx"), "onboarding.age.howOldAre");
+  });
+
+  test("strips _layout suffix (Expo Router)", () => {
+    assert.equal(suggestKey("Back", "src/app/(auth)/_layout.tsx"), "auth.back");
+  });
+
+  test("dashed path segments become camelCase", () => {
+    // services/journal-upload.ts → services.journalUpload.<word>
+    assert.equal(suggestKey("Upload failed", "src/services/journal-upload.ts"), "journalUpload.uploadFailed");
+  });
+
+  test("digit-leading text gets _ prefix", () => {
+    assert.equal(suggestKey("13 years old", "src/app/page.tsx"), "_13YearsOld");
+  });
+
+  test("namespace strips hooks/services/utils prefixes", () => {
+    assert.equal(suggestKey("Profile", "src/hooks/useProfile.ts"), "useProfile.profile");
+  });
+
+  test("complex Expo path", () => {
+    // (onboarding)/age.tsx with TS generic noise — should still produce clean key
+    assert.equal(suggestKey("Enter your age", "src/app/(onboarding)/age.tsx"), "onboarding.age.enterYourAge");
+  });
+});
+
+describe("detectShapeConflict (issue #7)", () => {
+  test("returns null for free space", () => {
+    assert.equal(detectShapeConflict({}, "a.b.c"), null);
+    assert.equal(detectShapeConflict({ other: "x" }, "a.b"), null);
+  });
+
+  test("returns null when target already exists as a string (handled as 'skip')", () => {
+    assert.equal(detectShapeConflict({ a: "value" }, "a"), null);
+    assert.equal(detectShapeConflict({ a: { b: "val" } }, "a.b"), null);
+  });
+
+  test("detects leaf-vs-namespace (ancestor is string)", () => {
+    // a is "leaf" string; writing a.b would replace string with object
+    assert.equal(detectShapeConflict({ a: "leaf" }, "a.b"), "leaf-vs-namespace");
+    assert.equal(detectShapeConflict({ a: { b: "leaf" } }, "a.b.c"), "leaf-vs-namespace");
+  });
+
+  test("detects namespace-vs-leaf (target is object)", () => {
+    // The exact regression from issue #7: settings.language is an object,
+    // candidate wants to write settings.language as a string.
+    const existing = {
+      settings: {
+        language: { title: "Language", setTo: "Set to {name}" },
+      },
+    };
+    assert.equal(detectShapeConflict(existing, "settings.language"), "namespace-vs-leaf");
+  });
+});
+
+describe("mergeKeys — refuses shape collisions (issue #7)", () => {
+  test("preserves existing namespace, reports conflict", () => {
+    const existing = {
+      settings: {
+        language: {
+          title: "Language",
+          setTo: "Language set to {name}",
+          updateFailed: "Failed to update language",
+        },
+      },
+    };
+    const { merged, added, conflicts } = mergeKeys(existing, [
+      { key: "settings.language", text: "Language" },
+    ]);
+    // Crucial: existing object is intact, NOT replaced by "Language"
+    assert.deepEqual(merged.settings.language, existing.settings.language);
+    assert.equal(added.length, 0);
+    assert.equal(conflicts.length, 1);
+    assert.equal(conflicts[0].kind, "namespace-vs-leaf");
+  });
+
+  test("blocks leaf-vs-namespace too", () => {
+    const existing = { a: "leaf" };
+    const { merged, added, conflicts } = mergeKeys(existing, [
+      { key: "a.b", text: "would replace" },
+    ]);
+    assert.equal(merged.a, "leaf");
+    assert.equal(added.length, 0);
+    assert.equal(conflicts.length, 1);
+    assert.equal(conflicts[0].kind, "leaf-vs-namespace");
+  });
+
+  test("non-colliding candidates still write", () => {
+    const existing = { settings: { language: { title: "Language" } } };
+    const { merged, added, conflicts } = mergeKeys(existing, [
+      { key: "settings.language", text: "Language" },     // conflict
+      { key: "home.title", text: "Welcome" },              // ok
+    ]);
+    assert.equal(merged.home.title, "Welcome");
+    assert.deepEqual(merged.settings.language, existing.settings.language);
+    assert.equal(added.length, 1);
+    assert.equal(conflicts.length, 1);
   });
 });
 
