@@ -6,3 +6,12 @@ node_modules/
 dist/
 coverage/
 .turbo/
+
+# Internal planning / strategy docs — not for the public repo.
+# Kept locally so the owner can iterate on them; never committed.
+RELEASE_PLAN.md
+MONETIZATION_PLAN.md
+LAUNCH_COPY.md
+MANUAL_STEPS_TOMORROW.md
+docs/distribution.md
+CLAUDE.md

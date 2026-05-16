@@ -89,7 +89,8 @@ That's it. The CLI:
 |---|---|---|
 | **Next.js (App Router)** | `next-intl` | `src/i18n/routing.ts`, `src/i18n/request.ts`, `src/middleware.ts`, plus a starter `src/app/[locale]/layout.tsx` + `page.tsx` if no `[locale]` segment exists |
 | **Next.js (Pages Router)** | `next-i18next` | Messages + workflow only; prints precise wiring steps (next.config.js i18n block, `appWithTranslation` HOC, `serverSideTranslations` in pages) |
-| **React Native** | `i18next` + `react-i18next` | `src/i18n/index.ts` with all locales registered |
+| **Expo** | `i18next` + `react-i18next` + `expo-localization` | `src/i18n/index.ts` with device-locale auto-detect on app start |
+| **React Native (bare)** | `i18next` + `react-i18next` | `src/i18n/index.ts` with all locales registered |
 | **Vite + React** | `i18next` + `react-i18next` | `src/i18n.ts` |
 | **Vue / Nuxt** | `vue-i18n` | `src/i18n.ts` (Composition API mode) |
 | **Generic / unknown** | (your choice) | Messages + workflow only — pair with any i18n library that reads JSON |
@@ -97,8 +98,9 @@ That's it. The CLI:
 After init, three things to finish:
 
 ```bash
-# 1. Install the runtime i18n library it suggested (e.g. next-intl, react-i18next)
-npm install next-intl
+# 1. Install the runtime i18n library — or let init do it:
+npx autoglot init --install            # detects npm/yarn/pnpm/bun automatically
+# (or run manually, e.g.: npm install next-intl)
 
 # 2. Add your Anthropic API key as a repo secret
 gh secret set ANTHROPIC_API_KEY
@@ -113,11 +115,17 @@ Push → GitHub Action runs → bot commits `messages/<locale>.json` translation
 ```bash
 npx autoglot                     # run translation (the default; same as before)
 npx autoglot init                # interactive scaffold (above)
+npx autoglot init --install      # …and auto-install runtime libs (--pm=pnpm to override)
 npx autoglot add tr ja zh        # add new target locales (creates empty JSON files)
 npx autoglot doctor              # health check the setup
 npx autoglot extract             # scan source for hardcoded strings and suggest keys
+npx autoglot extract --write     # …and merge them into messages/en.json (existing keys protected)
 npx autoglot --help              # full flag list
 ```
+
+### Monorepo
+
+All commands work from any subdirectory. Drop a `translate.config.json` next to the app whose messages you want translated (e.g. `apps/mobile/translate.config.json`) — paths inside the config resolve against the config file's directory, like eslint/vitest/tsconfig. `autoglot doctor` walks up to the repo root to find your workflow regardless of its filename (`translate.yml`, `translate-mobile.yml`, etc.).
 
 ## Quickstart — GitHub Action (manual setup)
 
@@ -271,7 +279,7 @@ In CI, the action then commits the diff and posts the cost summary on the PR.
 <details>
 <summary><strong>Does it work with my framework?</strong></summary>
 
-Yes. `npx autoglot init` has explicit support for **Next.js (App Router & Pages Router)**, **React Native**, **Vite + React**, and **Vue / Nuxt** — it scaffolds the right runtime setup for each. For anything else (Astro, SvelteKit, Solid, plain HTML, native mobile, server-side, ...) `init` runs in generic mode and just creates the messages + workflow; pair with whichever i18n library you already use that reads JSON.
+Yes. `npx autoglot init` has explicit support for **Next.js (App Router & Pages Router)**, **Expo**, **React Native (bare)**, **Vite + React**, and **Vue / Nuxt** — it scaffolds the right runtime setup for each. For anything else (Astro, SvelteKit, Solid, plain HTML, native mobile, server-side, ...) `init` runs in generic mode and just creates the messages + workflow; pair with whichever i18n library you already use that reads JSON.
 
 </details>
 
