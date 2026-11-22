@@ -38,7 +38,9 @@ init flags
 extract flags
   --write                     Merge candidates into messages/en.json (existing
                               keys are never overwritten).
-  --source=<path>             Override the target file (default: messages/en.json).
+  --source=<path>             Override the configured source catalog.
+  --config=<path>             Select an autoglot configuration.
+  --root=<path>               Override the directory to scan.
 
 Translation flags (when no subcommand given)
   --check                     Exit 1 if the lock or selected locales need updates.
@@ -92,7 +94,7 @@ if (first === "doctor") {
 if (first === "extract") {
   const m = await import("./extract.mjs");
   await m.run(argv.slice(1));
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }
 
 // Unknown subcommand sanity check: if first arg looks like a subcommand
