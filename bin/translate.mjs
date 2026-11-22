@@ -31,7 +31,7 @@
 //   --import-languine[=<path>]  Import a languine.lock to seed our lock file.
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "node:fs";
-import { join, resolve, isAbsolute } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import {
   parseArgs,
@@ -56,8 +56,8 @@ Usage
   npx autoglot [flags]
 
 Flags
-  --check                     CI gate: exit 1 if lock != source. No AI call.
-  --dry-run                   Show plan, no AI call, no writes.
+  --check                     Exit 1 if the lock or selected locales need updates.
+  --dry-run                   Show the plan without calling AI or updating translations.
   --quiet                     Suppress per-locale progress (auto-disabled in CI).
   --locales=de,fr             Restrict run to specific locales.
   --model=<id>                Override the configured model (default: claude-haiku-4-5).
@@ -71,7 +71,7 @@ Flags
   -h, --help                  Print this help and exit.
 
 Environment
-  ANTHROPIC_API_KEY           Required for real runs. Not needed for --check or --dry-run.
+  ANTHROPIC_API_KEY           Required when sending translation requests.
 
 Docs
   https://github.com/ffcabbar/autoglot
@@ -85,7 +85,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const PRICING = {
   "claude-haiku-4-5": { input: 1.0, output: 5.0 },
   "claude-sonnet-4-6": { input: 3.0, output: 15.0 },
-  "claude-opus-4-7": { input: 15.0, output: 75.0 },
+  "claude-opus-4-7": { input: 5.0, output: 25.0 },
 };
 
 const LOCALE_DISPLAY = new Intl.DisplayNames(["en"], { type: "language" });
@@ -117,6 +117,7 @@ const config = __paths.config || { namespaces: {} };
 const SOURCE_FILE = __paths.source;
 const MESSAGES_DIR = __paths.messagesDir;
 const LOCK_FILE = __paths.lockFile;
+const LOCK_SOURCE = relative(dirname(LOCK_FILE), SOURCE_FILE).split(sep).join("/");
 const SUMMARY_FILE = args["summary-path"]
   ? resolvePath(args["summary-path"])
   : join(tmpdir(), "translate-summary.md");
@@ -154,17 +155,48 @@ async function run() {
   const source = readJSON(SOURCE_FILE);
   const sourceFlat = flatten(source);
   const lock = loadLock();
-  const targets = args.locales
-    ? args.locales.split(",").map((s) => s.trim()).filter(Boolean)
-    : discoverTargetLocales();
+  const discovered = discoverTargetLocales();
+  const targets = args.locales === undefined
+    ? discovered
+    : typeof args.locales === "string"
+      ? [...new Set(args.locales.split(",").map((s) => s.trim()).filter(Boolean))]
+      : [];
+  if (args.locales !== undefined && targets.length === 0) {
+    console.error("[translate] --locales requires a comma-separated list of target locale codes.");
+    process.exit(1);
+  }
+  for (const locale of targets) {
+    try {
+      if (join(MESSAGES_DIR, `${locale}.json`).toLowerCase() === SOURCE_FILE.toLowerCase()) {
+        throw new Error("matches the source file");
+      }
+      Intl.getCanonicalLocales(locale);
+    } catch {
+      console.error(`[translate] Invalid target locale '${locale}'. Use a locale code different from the source locale file.`);
+      process.exit(1);
+    }
+  }
 
   const newDelta = [];
   const changedDelta = [];
   for (const key of Object.keys(sourceFlat)) {
     const h = hash(sourceFlat[key]);
-    if (!lock.hashes[key]) newDelta.push(key);
+    if (!Object.hasOwn(lock.hashes, key)) newDelta.push(key);
     else if (lock.hashes[key] !== h) changedDelta.push(key);
   }
+  const delta = new Set([...newDelta, ...changedDelta]);
+  const removed = Object.keys(lock.hashes).filter((key) => !Object.hasOwn(sourceFlat, key));
+  const plans = targets.map((locale) => {
+    const targetPath = join(MESSAGES_DIR, `${locale}.json`);
+    const existing = existsSync(targetPath) ? readJSON(targetPath) : {};
+    const existingFlat = flatten(existing);
+    const allowed = allowedTopLevelNamespaces(source, locale, config);
+    const filteredSource = pickAllowedSource(source, allowed);
+    const allowedFlat = flatten(filteredSource);
+    const keysToTranslate = Object.keys(allowedFlat).filter((key) => delta.has(key) || !Object.hasOwn(existingFlat, key));
+    const hasOrphans = Object.keys(existingFlat).some((key) => !Object.hasOwn(allowedFlat, key));
+    return { locale, targetPath, existing, filteredSource, keysToTranslate, hasOrphans };
+  });
 
   console.log(`[translate] source: ${newDelta.length} new keys, ${changedDelta.length} modified (${newDelta.length + changedDelta.length} total delta)`);
   if (targets.length === 0) {
@@ -172,20 +204,24 @@ async function run() {
   }
 
   if (args.check) {
-    if (newDelta.length + changedDelta.length === 0) {
-      console.log("[translate] All target locales up to date.");
-      process.exit(0);
+    if (delta.size > 0) console.log("[translate] Delta keys:", [...delta].join(", "));
+    if (removed.length > 0) console.log("[translate] Removed source keys:", removed.join(", "));
+    const pending = plans.filter(({ keysToTranslate, hasOrphans }) => keysToTranslate.length || hasOrphans);
+    if (pending.length > 0) {
+      console.log("[translate] Locales needing updates:", pending.map(({ locale }) => locale).join(", "));
     }
-    console.log("[translate] Delta keys:", [...newDelta, ...changedDelta].join(", "));
-    process.exit(1);
+    if (delta.size || removed.length || pending.length) process.exit(1);
+    console.log("[translate] All selected locales up to date.");
+    return;
   }
 
-  if (!process.env.ANTHROPIC_API_KEY && !args["dry-run"]) {
+  const dryRun = Boolean(args["dry-run"]);
+  if (!dryRun && plans.some(({ keysToTranslate }) => keysToTranslate.length) && !process.env.ANTHROPIC_API_KEY) {
     console.error("[translate] ANTHROPIC_API_KEY is not set.");
     process.exit(1);
   }
 
-  if (!existsSync(MESSAGES_DIR)) mkdirSync(MESSAGES_DIR, { recursive: true });
+  if (!dryRun && targets.length) mkdirSync(MESSAGES_DIR, { recursive: true });
 
   // Per-locale work runs in parallel up to LOCALE_CONCURRENCY. Each locale
   // writes its own file, so there's no contention. Aggregation into
@@ -195,28 +231,14 @@ async function run() {
   let totalIn = 0, totalOut = 0, totalCost = 0, skipped = 0;
   const limit = pLimit(LOCALE_CONCURRENCY);
 
-  async function processLocale(locale) {
-    const targetPath = join(MESSAGES_DIR, `${locale}.json`);
-    const existing = existsSync(targetPath) ? readJSON(targetPath) : {};
-    const existingFlat = flatten(existing);
-
-    const allowedNs = allowedTopLevelNamespaces(source, locale, config);
-    const isAllowed = (k) => allowedNs.has(k.split(".")[0]);
-
-    const missing = Object.keys(sourceFlat).filter((k) => isAllowed(k) && !(k in existingFlat));
-    const delta = [...newDelta, ...changedDelta].filter(isAllowed);
-    const keysToTranslate = Array.from(new Set([...missing, ...delta]));
-
-    const filteredSource = pickAllowedSource(source, allowedNs);
-    const hasOrphans = Object.keys(existingFlat).some((k) => !(k in sourceFlat) || !isAllowed(k));
-
+  async function processLocale({ locale, targetPath, existing, filteredSource, keysToTranslate, hasOrphans }) {
     if (keysToTranslate.length === 0) {
       if (!hasOrphans) {
         verbose(`[translate] ${locale.padEnd(6)} → up to date (skipped)`);
         skipped++;
         return;
       }
-      if (args["dry-run"]) {
+      if (dryRun) {
         verbose(`[translate] ${locale.padEnd(6)} → would remove orphan keys (dry-run)`);
         perLocale.push({ locale, keys: 0, inTok: 0, outTok: 0, cost: 0 });
         return;
@@ -228,7 +250,7 @@ async function run() {
       return;
     }
 
-    if (args["dry-run"]) {
+    if (dryRun) {
       verbose(`[translate] ${locale.padEnd(6)} → ${keysToTranslate.length} keys (dry-run)`);
       perLocale.push({ locale, keys: keysToTranslate.length, inTok: 0, outTok: 0, cost: 0 });
       return;
@@ -259,14 +281,27 @@ async function run() {
     verbose(`[translate] ${locale.padEnd(6)} → ${keysToTranslate.length} keys | in: ${usageIn} out: ${usageOut} | $${cost.toFixed(5)}`);
   }
 
-  await Promise.all(targets.map((locale) => limit(() => processLocale(locale))));
+  await Promise.all(plans.map((plan) => limit(() => processLocale(plan))));
   // Sort perLocale alphabetically so the summary table is stable across runs
   // (parallel completion order would otherwise scramble it).
   perLocale.sort((a, b) => a.locale.localeCompare(b.locale));
 
-  if (!args["dry-run"]) {
-    for (const key of Object.keys(sourceFlat)) lock.hashes[key] = hash(sourceFlat[key]);
-    for (const key of Object.keys(lock.hashes)) if (!(key in sourceFlat)) delete lock.hashes[key];
+  if (!dryRun) {
+    // A shared hash can only advance after every applicable existing locale has caught up.
+    const selected = new Set(targets);
+    const pending = new Set();
+    for (const locale of discovered.filter((locale) => !selected.has(locale))) {
+      const allowed = allowedTopLevelNamespaces(source, locale, config);
+      for (const key of Object.keys(flatten(pickAllowedSource(source, allowed)))) pending.add(key);
+    }
+    if (targets.length > 0) {
+      for (const key of Object.keys(sourceFlat)) {
+        if (!pending.has(key)) lock.hashes[key] = hash(sourceFlat[key]);
+      }
+    }
+    for (const key of removed) delete lock.hashes[key];
+    lock.source = LOCK_SOURCE;
+    mkdirSync(dirname(LOCK_FILE), { recursive: true });
     writeFileSync(LOCK_FILE, dumpLockYaml(lock));
   }
 
@@ -278,14 +313,14 @@ async function run() {
     totalOut,
     totalCost,
     perLocale,
-    dryRun: !!args["dry-run"],
+    dryRun,
     newKeys: newDelta.length,
     modifiedKeys: changedDelta.length,
   });
   console.log("[translate] ──────────────────────────────────────");
   console.log(summary.stdout);
-  if (STEP_SUMMARY) writeFileSync(STEP_SUMMARY, summary.markdown, { flag: "a" });
-  writeFileSync(SUMMARY_FILE, summary.markdown);
+  if (STEP_SUMMARY && !dryRun) writeFileSync(STEP_SUMMARY, summary.markdown, { flag: "a" });
+  if (!dryRun || args["summary-path"]) writeFileSync(SUMMARY_FILE, summary.markdown);
 }
 
 // --- Anthropic call -------------------------------------------------------
@@ -293,8 +328,12 @@ async function run() {
 // format with unescaped characters — the API returns `input` as a pre-parsed
 // object, eliminating a whole class of JSON parse failures (e.g. a Lithuanian
 // translation closing a quoted word with ASCII " instead of U+201D).
-async function translate(locale, payload, attempt = 1, rateAttempt = 0) {
+async function translate(locale, payload, attempt = 1, rateAttempt = 0, usage = { input_tokens: 0, output_tokens: 0 }) {
   const localeName = LOCALE_DISPLAY.of(locale) || locale;
+  let sourceLanguage = "the source language";
+  try {
+    sourceLanguage = LOCALE_DISPLAY.of(basename(SOURCE_FILE, ".json"));
+  } catch { /* the source file can have a name other than a locale code */ }
   const namespaces = new Set(Object.keys(payload).map((k) => k.split(".")[0]));
   const nsCtx = [...namespaces]
     .map((n) => `- ${n}: ${(config.namespaceContext && config.namespaceContext[n]) || "application copy"}`)
@@ -304,7 +343,7 @@ async function translate(locale, payload, attempt = 1, rateAttempt = 0) {
     ? ` Keep these product names verbatim: ${config.glossary.join(", ")}.`
     : "";
 
-  const system = `You are a professional localization engineer. Translate English values into ${localeName}. Preserve all placeholders like {name}, {count} exactly. Preserve ICU plural syntax verbatim ({count, plural, one {...} other {...}} — never translate one/other/few/many/zero or the # symbol).${glossary} Call the emit_translations tool with every input key mapped to its translated string — do not write prose outside the tool call.`;
+  const system = `You are a professional localization engineer. Translate values from ${sourceLanguage} into ${localeName}. Preserve all placeholders like {name}, {count} exactly. Preserve ICU plural syntax verbatim ({count, plural, one {...} other {...}} — never translate one/other/few/many/zero or the # symbol). Preserve line breaks as actual newline characters, not literal backslash-n sequences.${glossary} Call the emit_translations tool with every input key mapped to its translated string — do not write prose outside the tool call.`;
 
   const user = `Target locale: ${localeName} (${locale}).\nNamespace context:\n${nsCtx}\n\nTranslate:\n${JSON.stringify(payload, null, 2)}`;
 
@@ -338,36 +377,42 @@ async function translate(locale, payload, attempt = 1, rateAttempt = 0) {
       const retryAfterSec = Number(res.headers.get("retry-after")) || 60;
       console.warn(`[translate] ${locale}: rate limited (429), sleeping ${retryAfterSec}s (retry ${rateAttempt + 1}/${RATE_LIMIT_MAX_RETRIES})`);
       await sleep(retryAfterSec * 1000 + 500);
-      return translate(locale, payload, attempt, rateAttempt + 1);
+      return translate(locale, payload, attempt, rateAttempt + 1, usage);
     }
     throw new Error(`Anthropic API ${res.status}: ${await res.text()}`);
   }
 
   const body = await res.json();
-  const toolUse = body.content?.find((c) => c.type === "tool_use");
+  usage.input_tokens += body.usage?.input_tokens ?? 0;
+  usage.output_tokens += body.usage?.output_tokens ?? 0;
+  const toolUse = body.content?.find((c) => c.type === "tool_use" && c.name === "emit_translations");
   if (!toolUse || typeof toolUse.input !== "object" || toolUse.input === null) {
     if (attempt >= 2) throw new Error(`${locale}: no tool_use block in response\nRaw:\n${JSON.stringify(body.content)}`);
     console.warn(`[translate] ${locale} → missing tool_use block, retrying once`);
-    return translate(locale, payload, attempt + 1);
+    return translate(locale, payload, attempt + 1, rateAttempt, usage);
   }
   const translations = toolUse.input;
 
   for (const key of Object.keys(payload)) {
-    if (typeof translations[key] !== "string") {
-      if (attempt < 2) return translate(locale, payload, attempt + 1);
-      console.warn(`[translate] ${locale}: '${key}' omitted by model, using source value verbatim`);
-      translations[key] = payload[key];
-      continue;
+    if (!Object.hasOwn(translations, key) || typeof translations[key] !== "string") {
+      if (attempt < 2) return translate(locale, payload, attempt + 1, rateAttempt, usage);
+      throw new Error(`${locale}: model omitted a translation for '${key}'`);
     }
     const srcP = extractPlaceholders(payload[key]);
     const outP = extractPlaceholders(translations[key]);
     if (!setsEqual(srcP, outP)) {
       if (attempt >= 2) throw new Error(`${locale}: placeholder mismatch on '${key}'. source=[${[...srcP].join(",")}] got=[${[...outP].join(",")}]`);
-      return translate(locale, payload, attempt + 1);
+      return translate(locale, payload, attempt + 1, rateAttempt, usage);
+    }
+    const sourceBreaks = String(payload[key]).match(/\n/g)?.length ?? 0;
+    const translatedBreaks = translations[key].match(/\n/g)?.length ?? 0;
+    if (sourceBreaks > 0 && sourceBreaks !== translatedBreaks) {
+      if (attempt < 2) return translate(locale, payload, attempt + 1, rateAttempt, usage);
+      throw new Error(`${locale}: newline mismatch on '${key}'`);
     }
   }
 
-  return { translations, usage: body.usage };
+  return { translations: Object.fromEntries(Object.keys(payload).map((key) => [key, translations[key]])), usage };
 }
 
 // --- Helpers --------------------------------------------------------------
@@ -380,8 +425,8 @@ function readJSON(p) {
 }
 
 function loadLock() {
-  if (!existsSync(LOCK_FILE)) return { version: 1, source: SOURCE_FILE, hashes: {} };
-  return parseLockYaml(readFileSync(LOCK_FILE, "utf8"), SOURCE_FILE);
+  if (!existsSync(LOCK_FILE)) return { version: 1, source: LOCK_SOURCE, hashes: {} };
+  return parseLockYaml(readFileSync(LOCK_FILE, "utf8"), LOCK_SOURCE);
 }
 
 // loadConfig moved to ./config.mjs (shared with add/doctor; resolves
@@ -389,7 +434,7 @@ function loadLock() {
 
 function discoverTargetLocales() {
   if (!existsSync(MESSAGES_DIR)) return [];
-  const sourceBasename = SOURCE_FILE.split("/").pop();
+  const sourceBasename = basename(SOURCE_FILE);
   return readdirSync(MESSAGES_DIR)
     .filter((f) => f.endsWith(".json") && f !== sourceBasename)
     .map((f) => f.slice(0, -5))
@@ -403,16 +448,29 @@ function importLanguineLock(srcPath) {
   }
   const raw = readFileSync(srcPath, "utf8");
   const hashes = {};
+  let inFiles = false;
   let inFile = false;
+  let matchedFile = false;
   for (const line of raw.split("\n")) {
-    if (/^files:/.test(line)) continue;
-    if (/^\s{2}\S.*\.json:/.test(line)) { inFile = true; continue; }
-    if (/^\s{2}\S/.test(line)) { inFile = false; continue; }
+    if (/^files:\s*$/.test(line)) { inFiles = true; continue; }
+    if (/^\S/.test(line)) inFiles = false;
+    if (!inFiles) continue;
+    const file = line.match(/^ {2}(\S.*\.json):\s*$/)?.[1];
+    if (/^ {2}\S/.test(line)) {
+      inFile = Boolean(file) && [dirname(srcPath), CWD].some((base) => resolve(base, file) === SOURCE_FILE);
+      matchedFile ||= inFile;
+      continue;
+    }
     if (!inFile) continue;
-    const m = line.match(/^\s{4}([^:]+):\s*(\S+)\s*$/);
-    if (m) hashes[m[1].trim()] = m[2].trim();
+    const m = line.match(/^ {4}(.+):\s*([0-9a-f]{32})\s*$/i);
+    if (m) hashes[m[1].trim().replaceAll("\\.", ".")] = m[2].toLowerCase();
   }
-  const lock = { version: 1, source: SOURCE_FILE, hashes };
+  if (!matchedFile) {
+    console.error(`[translate] No entry in ${srcPath} matches ${SOURCE_FILE}. Check --source or --config.`);
+    process.exit(1);
+  }
+  const lock = { version: 1, source: LOCK_SOURCE, hashes };
+  mkdirSync(dirname(LOCK_FILE), { recursive: true });
   writeFileSync(LOCK_FILE, dumpLockYaml(lock));
   console.log(`[translate] Imported ${Object.keys(hashes).length} hashes from ${srcPath} → ${LOCK_FILE}`);
 }
