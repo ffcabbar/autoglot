@@ -38,6 +38,10 @@ const args = Object.entries(overrides)
 args.push(`--summary-path=${process.env.SUMMARY_PATH}`);
 
 const version = process.env.AUTOGLOT_PACKAGE_VERSION;
-if (version) run("npx", ["--yes", "--package", `autoglot@${version}`, "--", "autoglot", ...args]);
+if (version) {
+  const npmArgs = ["--yes", "--package", `autoglot@${version}`, "--", "autoglot", ...args];
+  if (process.platform === "win32") run("bash", ["-c", 'exec npx "$@"', "npx", ...npmArgs]);
+  run("npx", npmArgs);
+}
 
 run(process.execPath, [fileURLToPath(new URL("../../bin/cli.mjs", import.meta.url)), ...args]);
