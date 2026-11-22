@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['20', '22']
+        node: ['20', '22', '24']
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
@@ -35,4 +35,78 @@ jobs:
           node-version: '22'
       - name: dry-run against examples/basic
         working-directory: examples/basic
-        run: node ../../bin/translate.mjs --dry-run
+        run: node ../../bin/cli.mjs --dry-run
+      - name: Check reports the unlocked example as pending
+        shell: bash
+        working-directory: examples/basic
+        run: |
+          status=0
+          node ../../bin/cli.mjs --check || status=$?
+          test "$status" -eq 1
+
+  action:
+    name: composite action smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare monorepo fixture and local remote
+        shell: bash
+        run: |
+          branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          git switch -C "$branch"
+          git config user.name "Autoglot smoke test"
+          git config user.email smoke@example.invalid
+          mkdir -p 'apps/smoke app/i18n' "$RUNNER_TEMP/mock-bin"
+          printf '%s\n' '{"hello":"Hello, {name}!"}' > 'apps/smoke app/i18n/en.json'
+          printf '%s\n' '{}' > 'apps/smoke app/i18n/es.json'
+          printf '%s\n' '{"source":"i18n/en.json","messagesDir":"i18n","lockFile":"i18n.lock","model":"claude-sonnet-4-6"}' > 'apps/smoke app/translate.config.json'
+          git add 'apps/smoke app'
+          git commit -m 'Add temporary smoke fixture'
+          git init --bare "$RUNNER_TEMP/remote.git"
+          git remote set-url origin "$RUNNER_TEMP/remote.git"
+          git push origin "HEAD:refs/heads/$branch"
+          git rev-parse HEAD > "$RUNNER_TEMP/fixture-head"
+
+          cat > "$RUNNER_TEMP/mock-bin/gh" <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          if [[ "$1 $2" == "pr list" ]]; then
+            echo 42
+          elif [[ "$1 $2" == "pr comment" && "$4" == "--body-file" ]]; then
+            cp "$5" "$RUNNER_TEMP/posted-comment.md"
+          else
+            exit 1
+          fi
+          SCRIPT
+          chmod +x "$RUNNER_TEMP/mock-bin/gh"
+          echo "$RUNNER_TEMP/mock-bin" >> "$GITHUB_PATH"
+      - name: Run composite action
+        uses: ./
+        env:
+          NODE_OPTIONS: --import="${{ github.workspace }}/.github/test/action-provider.mjs"
+        with:
+          anthropic-api-key: simulated
+          config: apps/smoke app/translate.config.json
+      - name: Verify translation commit and comment
+        shell: bash
+        run: |
+          branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          test "$(git rev-parse HEAD)" = "$(git ls-remote origin "refs/heads/$branch" | cut -f1)"
+          test "$(git rev-parse HEAD^)" = "$(cat "$RUNNER_TEMP/fixture-head")"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = $'apps/smoke app/i18n.lock\napps/smoke app/i18n/es.json'
+          git show HEAD:'apps/smoke app/i18n/es.json' | jq -e '.hello == "Hola, {name}!"'
+          grep -F 'Translation run summary' "$RUNNER_TEMP/posted-comment.md"
+          grep -F "actions/runs/$GITHUB_RUN_ID" "$RUNNER_TEMP/posted-comment.md"
+      - name: Re-run on an up-to-date catalog
+        uses: ./
+        env:
+          NODE_OPTIONS: --import="${{ github.workspace }}/.github/test/action-provider.mjs"
+        with:
+          anthropic-api-key: simulated
+          config: apps/smoke app/translate.config.json
+      - name: Verify no second commit
+        shell: bash
+        run: test "$(git rev-parse HEAD^)" = "$(cat "$RUNNER_TEMP/fixture-head")"
