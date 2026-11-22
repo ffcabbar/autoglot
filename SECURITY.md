@@ -6,7 +6,7 @@ The latest minor on the `0.x` line is the only supported version. Once `1.0.0` s
 
 ## Reporting a vulnerability
 
-Please **do not open a public issue** for security reports.
+Use [GitHub private vulnerability reporting](https://github.com/ffcabbar/autoglot/security/advisories/new) or the email address below. Share a redacted report and omit credentials from logs and screenshots.
 
 Email: `ffcabbar@gmail.com`. Use a subject line like `[autoglot security] short description`.
 
@@ -30,3 +30,9 @@ Out of scope:
 - The `ANTHROPIC_API_KEY` is read from `process.env.ANTHROPIC_API_KEY`. It's never written to disk and never logged.
 - The lock file is plain YAML (md5 hashes only — no source text).
 - The composite GitHub Action commits with `github-actions[bot]`, not your user account.
+
+## Maintainer credentials and CI
+
+This public repository runs its test suite without provider credentials. For a live translation check, supply the Anthropic key through the local process environment. Keep local credentials out of Git and npm tarballs. If a credential is exposed, revoke or rotate it at the provider.
+
+In repositories that use the Action, run translation on trusted branches. Use read-only permissions for tests of forked pull requests. Keep unreviewed fork code out of jobs that can access a provider key or write to the repository.
