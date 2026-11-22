@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/autoglot"><img src="https://img.shields.io/npm/v/autoglot?color=8b5cf6" alt="npm version"></a>
   <a href="https://github.com/ffcabbar/autoglot/actions/workflows/ci.yml"><img src="https://github.com/ffcabbar/autoglot/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="https://github.com/marketplace/actions/autoglot"><img src="https://img.shields.io/badge/GitHub%20Marketplace-autoglot-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Marketplace"></a>
+  <a href="https://github.com/ffcabbar/autoglot/tree/v1"><img src="https://img.shields.io/badge/GitHub%20Action-v1-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Action v1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/autoglot?color=8b5cf6" alt="MIT license"></a>
 </p>
 
@@ -305,7 +305,7 @@ Add them to `glossary` in `translate.config.json`. They'll be passed to Claude w
 - [ ] **v0.3** — YAML / `.strings` / Android XML formats (gated on demand)
 - [ ] **v0.4** — Hosted GitHub App (real bot avatar, one-click install) — paid tier, OSS still first-class
 
-See [`RELEASE_PLAN.md`](./RELEASE_PLAN.md) for the full plan.
+See the [roadmap](ROADMAP.md) for upcoming work and the [open issues](https://github.com/ffcabbar/autoglot/issues) for current maintenance tasks.
 
 ## Contributing
 
