@@ -98,8 +98,8 @@ jobs:
           test "$(git rev-parse HEAD^)" = "$(cat "$RUNNER_TEMP/fixture-head")"
           test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = $'apps/smoke app/i18n.lock\napps/smoke app/i18n/es.json'
           git show HEAD:'apps/smoke app/i18n/es.json' | jq -e '.hello == "Hola, {name}!"'
-          rg -F 'Translation run summary' "$RUNNER_TEMP/posted-comment.md"
-          rg -F "actions/runs/$GITHUB_RUN_ID" "$RUNNER_TEMP/posted-comment.md"
+          grep -F 'Translation run summary' "$RUNNER_TEMP/posted-comment.md"
+          grep -F "actions/runs/$GITHUB_RUN_ID" "$RUNNER_TEMP/posted-comment.md"
       - name: Re-run on an up-to-date catalog
         uses: ./
         env:
