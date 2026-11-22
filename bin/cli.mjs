@@ -41,8 +41,8 @@ extract flags
   --source=<path>             Override the target file (default: messages/en.json).
 
 Translation flags (when no subcommand given)
-  --check                     CI gate: exit 1 if lock != source. No AI call.
-  --dry-run                   Show plan, no AI call, no writes.
+  --check                     Exit 1 if the lock or selected locales need updates.
+  --dry-run                   Show the plan without calling AI or updating translations.
   --quiet                     Suppress per-locale progress (auto-disabled in CI).
   --locales=de,fr             Restrict run to specific locales.
   --model=<id>                Override the configured model (default: claude-haiku-4-5).
@@ -54,7 +54,7 @@ Translation flags (when no subcommand given)
   --summary-path=<path>       Where to write the markdown summary.
 
 Environment
-  ANTHROPIC_API_KEY           Required for real runs. Not needed for --check or --dry-run.
+  ANTHROPIC_API_KEY           Required when sending translation requests.
 
 Docs
   https://github.com/ffcabbar/autoglot

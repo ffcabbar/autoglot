@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased (0.3.4)
+
+### Fixed
+
+- Keep source changes pending when a run selects only some target locales. Check mode also detects missing translations, removed source keys, and orphaned locale keys.
+- Validate that Claude returns each requested key, preserves placeholders and explicit line breaks, and leaves unrequested entries alone. Include provider retries in usage totals and use the published Opus 4.7 rate.
+- Translate flat dotted catalogs, write portable source paths to version 1 locks, and import hashes only from the matching Languine catalog.
+- Let dry runs print a plan without creating locale or lock files. An explicitly requested summary path still works.
+
 ## [0.3.3] - 2026-05-16
 
 ### Fixed
