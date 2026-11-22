@@ -1,5 +1,10 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   isLikelyUserFacing,
   extractCandidates,
@@ -412,5 +417,63 @@ describe("lineFromOffset", () => {
     assert.equal(lineFromOffset(code, 2), 2);   // 'b'
     assert.equal(lineFromOffset(code, 4), 3);   // 'c'
     assert.equal(lineFromOffset(code, 6), 4);   // 'd'
+  });
+});
+
+describe("extract and doctor CLI configuration", () => {
+  const cli = fileURLToPath(new URL("../bin/cli.mjs", import.meta.url));
+
+  function repo(t) {
+    const cwd = mkdtempSync(join(tmpdir(), "autoglot-extract-"));
+    t.after(() => rmSync(cwd, { recursive: true, force: true }));
+    const app = join(cwd, "apps", "site");
+    mkdirSync(join(app, "locales"), { recursive: true });
+    mkdirSync(join(app, "ui"));
+    writeFileSync(join(app, "translate.config.json"), '{"source":"locales/en.json","messagesDir":"locales"}');
+    writeFileSync(join(app, "locales", "en.json"), '{"title":"Keep the existing title"}');
+    writeFileSync(join(app, "ui", "Button.tsx"), '<button>Explore the catalog</button>');
+    const run = (...args) => spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8" });
+    return { cwd, app, run };
+  }
+
+  test("selects a monorepo source catalog, scans a custom root, and respects an absolute source override", (t) => {
+    const { cwd, app, run } = repo(t);
+    const config = "--config=apps/site/translate.config.json";
+    const source = join(app, "locales", "en.json");
+    const preview = run("extract", config, "--root", "apps/site/ui");
+    assert.equal(preview.status, 0, preview.stderr);
+    assert.match(preview.stdout, /Explore the catalog/);
+    assert.equal(readFileSync(source, "utf8"), '{"title":"Keep the existing title"}');
+
+    const result = run("extract", config, "--root=apps/site/ui", "--write");
+    assert.equal(result.status, 0, result.stderr);
+    const catalog = JSON.parse(readFileSync(source, "utf8"));
+    assert.equal(catalog.title, "Keep the existing title");
+    assert.match(JSON.stringify(catalog), /Explore the catalog/);
+    assert.equal(existsSync(join(cwd, "messages")), false);
+
+    const override = join(cwd, "override.json");
+    const overridden = run("extract", config, "--root=apps/site/ui", "--write", `--source=${override}`);
+    assert.equal(overridden.status, 0, overridden.stderr);
+    assert.match(readFileSync(override, "utf8"), /Explore the catalog/);
+  });
+
+  test("invalid scan roots, config or source JSON produce failing exit statuses", (t) => {
+    const { app, run } = repo(t);
+    const missingConfig = "--config=missing.json";
+    for (const args of [["doctor", missingConfig], ["extract", missingConfig]]) {
+      const result = run(...args);
+      assert.equal(result.status, 1, result.stdout);
+      assert.match(result.stdout, /Configuration file missing.json not found/);
+    }
+
+    const badRoot = run("extract", "--root=missing");
+    assert.equal(badRoot.status, 1, badRoot.stdout);
+    assert.match(badRoot.stdout, /Scan directory missing not found/);
+    writeFileSync(join(app, "locales", "en.json"), "{");
+    const invalid = run("extract", "--config=apps/site/translate.config.json", "--root=apps/site/ui", "--write");
+    assert.equal(invalid.status, 1, invalid.stdout);
+    assert.match(invalid.stdout, /Couldn't parse/);
+    assert.equal(readFileSync(join(app, "locales", "en.json"), "utf8"), "{");
   });
 });

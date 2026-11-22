@@ -28,8 +28,10 @@ export async function run(argv = []) {
   }
 
   // 1. translate.config.json
-  if (paths.configPath) {
+  if (paths.config) {
     ok(`${relative(cwd, paths.configPath) || paths.configPath} found and parses.`);
+  } else if (args.config) {
+    e(`Configuration file ${args.config} not found.`);
   } else {
     w("translate.config.json not found — autoglot will use defaults. Consider `autoglot init`.");
   }
