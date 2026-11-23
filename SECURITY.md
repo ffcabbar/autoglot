@@ -6,9 +6,7 @@ The latest minor on the `0.x` line is the only supported version. Once `1.0.0` s
 
 ## Reporting a vulnerability
 
-Use [GitHub private vulnerability reporting](https://github.com/ffcabbar/autoglot/security/advisories/new) or the email address below. Share a redacted report and omit credentials from logs and screenshots.
-
-Email: `ffcabbar@gmail.com`. Use a subject line like `[autoglot security] short description`.
+Use [GitHub private vulnerability reporting](https://github.com/ffcabbar/autoglot/security/advisories/new). Share a redacted report and omit credentials from logs and screenshots.
 
 I'll acknowledge within 72 hours and keep you posted on a fix. Once a fix is shipped, I'll publish a GitHub Security Advisory and credit the reporter (unless you prefer to stay anonymous).
 
