@@ -3,13 +3,15 @@
 // Generates src/i18n.ts with i18next configured. The user imports it
 // once in src/main.tsx (before <App/> renders).
 
+import { localeImportName } from "./common.mjs";
+
 /** @param {{ defaultLocale: string, locales: string[] }} ctx */
 export function i18nTs(ctx) {
   const imports = ctx.locales
-    .map((l) => `import ${jsId(l)} from "../messages/${l}.json";`)
+    .map((l) => `import ${localeImportName(l)} from "../messages/${l}.json";`)
     .join("\n");
   const resources = ctx.locales
-    .map((l) => `    ${quoteIfNeeded(l)}: { translation: ${jsId(l)} },`)
+    .map((l) => `    ${quoteIfNeeded(l)}: { translation: ${localeImportName(l)} },`)
     .join("\n");
 
   return `import i18n from "i18next";
@@ -44,9 +46,6 @@ export function followupNotes() {
   ];
 }
 
-function jsId(loc) {
-  return loc.replace(/[^a-zA-Z0-9_$]/g, "_");
-}
 function quoteIfNeeded(loc) {
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(loc) ? loc : JSON.stringify(loc);
 }

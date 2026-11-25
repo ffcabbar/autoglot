@@ -1,13 +1,13 @@
-// `autoglot init` — interactive scaffold.
+// `autoglot init` — scaffold a project with prompted or explicit target locales.
 //
-// Detects the framework, asks the user which locales to support, and writes:
+// Detects the framework and writes:
 //   - messages/en.json (with example keys)
 //   - messages/<locale>.json per chosen locale (empty)
 //   - translate.config.json
 //   - .github/workflows/translate.yml
 //   - framework-specific files when supported (e.g. next-intl scaffold)
 //
-// Never overwrites existing files without explicit confirmation.
+// Skips existing files.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
@@ -31,16 +31,18 @@ const TEMPLATES = {
   "vite-react": viteReact,
   "vue": vueI18n,
 };
+const LOCALE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 
 /**
  * Parse `init`-specific flags. Unknown flags are ignored (forward-compat).
  *
+ *   --locales=de,fr      scaffold for explicit target locales without prompts
  *   --install            opt-in: run the package manager to install runtime deps
  *   --pm=npm|yarn|pnpm|bun  override the auto-detected package manager
  *   --no-install         force off (useful in CI if a default ever flips)
  */
 export function parseInitArgs(argv) {
-  const opts = { install: false, installExplicit: false, pm: null };
+  const opts = { install: false, installExplicit: false, pm: null, locales: null };
   for (const arg of argv) {
     if (arg === "--install") {
       opts.install = true;
@@ -51,6 +53,9 @@ export function parseInitArgs(argv) {
     } else if (arg.startsWith("--pm=")) {
       const v = arg.slice("--pm=".length);
       if (PACKAGE_MANAGERS.includes(v)) opts.pm = v;
+    } else if (arg === "--locales" || arg.startsWith("--locales=")) {
+      const values = arg.slice("--locales=".length).split(",");
+      opts.locales = [...new Set(values.map((value) => value.trim()))];
     }
   }
   return opts;
@@ -58,6 +63,14 @@ export function parseInitArgs(argv) {
 
 export async function run(argv = []) {
   const opts = parseInitArgs(argv);
+  const defaultLocale = "en";
+  const nonInteractive = opts.locales !== null;
+  if (nonInteractive && opts.locales.some((locale) => !LOCALE_CODE.test(locale) || locale === defaultLocale)) {
+    process.stderr.write("autoglot init: expected target locale codes other than en, e.g. --locales=de,pt-BR.\n");
+    process.exitCode = 1;
+    return;
+  }
+
   const cwd = process.cwd();
   step("autoglot init");
   info(`cwd: ${c.dim}${cwd}${c.reset}`);
@@ -87,33 +100,31 @@ export async function run(argv = []) {
 
   // Pick locales
   step("Locales");
-  const localeChoices = LOCALE_CATALOG.map((l) => ({
-    label: l.label,
-    value: l.code,
-    default: ["es", "de", "tr"].includes(l.code),
-  }));
-  const targetLocales = await multiselect(
-    "Which target locales to translate into?",
-    localeChoices,
-  );
-  if (targetLocales.length === 0) {
-    err("Need at least one target locale. Aborting.");
-    process.exit(1);
-  }
+  let targetLocales = opts.locales;
+  if (!nonInteractive) {
+    const localeChoices = LOCALE_CATALOG.map((l) => ({
+      label: l.label,
+      value: l.code,
+      default: ["es", "de", "tr"].includes(l.code),
+    }));
+    targetLocales = await multiselect("Which target locales to translate into?", localeChoices);
+    if (targetLocales.length === 0) {
+      err("Need at least one target locale. Aborting.");
+      process.exitCode = 1;
+      closePrompts();
+      return;
+    }
 
-  const customLocale = await ask(
-    "Add another locale not in the list? (ISO code, e.g. \"hi\")",
-    "",
-  );
-  if (customLocale) {
-    if (/^[a-z]{2,3}(-[A-Z]{2})?$/.test(customLocale)) {
-      targetLocales.push(customLocale);
-    } else {
-      warn(`"${customLocale}" doesn't look like an ISO locale code. Skipping.`);
+    const customLocale = await ask("Add another locale not in the list? (ISO code, e.g. \"hi\")", "");
+    if (customLocale) {
+      if (LOCALE_CODE.test(customLocale)) {
+        targetLocales.push(customLocale);
+      } else {
+        warn(`"${customLocale}" doesn't look like an ISO locale code. Skipping.`);
+      }
     }
   }
 
-  const defaultLocale = "en";
   ok(`Source: ${defaultLocale} → Targets: ${targetLocales.join(", ")}`);
 
   // Note: we deliberately do NOT run `npm install` here. Auto-install of a
@@ -185,8 +196,7 @@ export async function run(argv = []) {
     process.stdout.write(`  ${status}  ${f.path}\n`);
   }
 
-  const proceed = await confirm("\nProceed?", true);
-  if (!proceed) {
+  if (!nonInteractive && !(await confirm("\nProceed?", true))) {
     info("Aborted.");
     closePrompts();
     return;
@@ -203,7 +213,13 @@ export async function run(argv = []) {
       continue;
     }
     mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, f.content);
+    try {
+      writeFileSync(full, f.content, { flag: "wx" });
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      skipped++;
+      continue;
+    }
     ok(f.path);
     written++;
   }
@@ -219,7 +235,7 @@ export async function run(argv = []) {
   if (runtimeInstallHint) {
     const pkgs = runtimeInstallHint.split(" ").filter(Boolean);
     let shouldInstall = opts.install;
-    if (!opts.installExplicit) {
+    if (!nonInteractive && !opts.installExplicit) {
       shouldInstall = await confirm(
         `Install runtime packages now (${pkgs.join(", ")})?`,
         false,
@@ -237,6 +253,7 @@ export async function run(argv = []) {
       } else {
         warn(`${pm} install exited with code ${res.status ?? "?"}. You can re-run manually.`);
         installFailed = true;
+        if (nonInteractive) process.exitCode = 1;
       }
     }
   }

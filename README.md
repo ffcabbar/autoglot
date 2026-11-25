@@ -36,6 +36,17 @@ npx autoglot init
 
 Review the generated files, install the suggested i18n library, and add `ANTHROPIC_API_KEY` to your GitHub repository secrets. Edit `messages/en.json` and push your branch. For a local preview of the translation plan, run `npx autoglot --dry-run`.
 
+### Non-interactive setup
+
+The repository source supports unattended setup. From your app directory, pass a comma-separated list of target locales to the CLI in your local Autoglot checkout.
+
+```bash
+node /path/to/autoglot/bin/cli.mjs init --locales=de,pt-BR
+node /path/to/autoglot/bin/cli.mjs --dry-run
+```
+
+Setup creates the missing files and skips paths that already exist. The dry run lists the keys to translate for `de` and `pt-BR` without an API key. Add `--install` to opt into installing the runtime libraries. If that install fails, unattended setup exits with an error after printing the retry command.
+
 ### Supported frameworks
 
 | Framework | Runtime library | What `init` scaffolds |

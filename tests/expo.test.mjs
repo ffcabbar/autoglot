@@ -33,9 +33,9 @@ describe("expo template", () => {
 
   test("indexTs imports each locale", () => {
     const code = indexTs({ defaultLocale: "en", locales: ["en", "es", "de"] });
-    assert.match(code, /import en from "\.\.\/\.\.\/messages\/en\.json"/);
-    assert.match(code, /import es from "\.\.\/\.\.\/messages\/es\.json"/);
-    assert.match(code, /import de from "\.\.\/\.\.\/messages\/de\.json"/);
+    assert.match(code, /import locale_en from "\.\.\/\.\.\/messages\/en\.json"/);
+    assert.match(code, /import locale_es from "\.\.\/\.\.\/messages\/es\.json"/);
+    assert.match(code, /import locale_de from "\.\.\/\.\.\/messages\/de\.json"/);
   });
 
   test("indexTs uses compatibilityJSON v4 for RN/Expo", () => {
@@ -51,8 +51,8 @@ describe("expo template", () => {
 
   test("locale codes with dashes are sanitized for JS identifiers", () => {
     const code = indexTs({ defaultLocale: "en", locales: ["en", "zh-CN"] });
-    assert.match(code, /import zh_CN from "\.\.\/\.\.\/messages\/zh-CN\.json"/);
-    assert.match(code, /"zh-CN": \{ translation: zh_CN \}/);
+    assert.match(code, /import locale_zh_CN from "\.\.\/\.\.\/messages\/zh-CN\.json"/);
+    assert.match(code, /"zh-CN": \{ translation: locale_zh_CN \}/);
   });
 
   test("files() returns src/i18n/index.ts", () => {
