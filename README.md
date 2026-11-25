@@ -41,8 +41,8 @@ Review the generated files, install the suggested i18n library, and add `ANTHROP
 Autoglot 0.4.0 adds unattended setup. From your app directory, pass a comma-separated list of target locales.
 
 ```bash
-npx autoglot@0.4.0 init --locales=de,pt-BR
-npx autoglot@0.4.0 --dry-run
+npx --yes autoglot@0.4.0 init --locales=de,pt-BR
+npx --yes autoglot@0.4.0 --dry-run
 ```
 
 Setup creates the missing files and skips paths that already exist. The dry run lists the keys to translate for `de` and `pt-BR` without an API key. Add `--install` to opt into installing the runtime libraries. If that install fails, unattended setup exits with an error after printing the retry command.
