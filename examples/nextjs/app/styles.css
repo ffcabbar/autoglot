@@ -1,0 +1,85 @@
+:root {
+  color-scheme: light;
+  background: #f6f4e8;
+  color: #1c3128;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 6vw, 4rem);
+  max-width: 62rem;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #b4c2a5;
+}
+
+.wordmark {
+  font-family: Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+nav a {
+  border-radius: 2rem;
+  color: inherit;
+  padding: 0.5rem 0.75rem;
+}
+
+nav a[aria-current="page"] {
+  background: #1c3128;
+  color: #fff;
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid #1c3128;
+  outline-offset: 3px;
+}
+
+main {
+  padding: clamp(3rem, 12vw, 9rem) 0 3rem;
+}
+
+h1 {
+  font: normal clamp(2.75rem, 8vw, 6rem)/1.05 Georgia, serif;
+  letter-spacing: -0.04em;
+  margin: 0;
+  max-width: 15ch;
+}
+
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+p {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.intro {
+  font-size: 1.25rem;
+  max-width: 38ch;
+  margin-top: 1.25rem;
+}
+
+section {
+  background: #e4ebd7;
+  border-left: 3px solid #627a47;
+  margin-top: 3rem;
+  max-width: 33rem;
+  padding: 1.5rem;
+}
