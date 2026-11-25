@@ -9,13 +9,13 @@
 // for "find me the obvious low-hanging strings" the regex approach
 // catches ~80% of real strings with very few false positives.
 
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from "node:fs";
-import { join, relative, extname, dirname } from "node:path";
+import { readFileSync, writeFileSync, statSync, existsSync, mkdirSync } from "node:fs";
+import { join, relative, resolve, dirname } from "node:path";
 import { step, info, ok, warn, err, c } from "./prompts.mjs";
+import { resolvePaths } from "./config.mjs";
 import {
   walk,
   extractCandidates,
-  isLikelyUserFacing,
   suggestKey,
   setNested,
   mergeKeys,
@@ -32,13 +32,26 @@ export const SKIP_DIRS = new Set([
  * Parse `extract`-specific flags. Unknown flags are ignored (forward-compat).
  *
  *   --write           merge candidates into messages/en.json (skips existing keys)
- *   --source=<path>   override the target file (default: messages/en.json)
+ *   --source=<path>   override the source catalog
+ *   --config=<path>   select an autoglot configuration
+ *   --root=<path>     override the directory to scan
  */
 export function parseExtractArgs(argv) {
   const opts = { write: false, source: null };
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
     if (arg === "--write") opts.write = true;
     else if (arg.startsWith("--source=")) opts.source = arg.slice("--source=".length);
+    else if (arg.startsWith("--config=")) opts.config = arg.slice("--config=".length);
+    else if (arg.startsWith("--root=")) opts.root = arg.slice("--root=".length);
+    else if (arg === "--root") {
+      const next = argv[i + 1];
+      opts.root = "";
+      if (next && !next.startsWith("-")) {
+        opts.root = next;
+        i++;
+      }
+    }
   }
   return opts;
 }
@@ -48,11 +61,33 @@ export async function run(args = []) {
   const cwd = process.cwd();
   step("autoglot extract");
 
-  // Pick scan roots: prefer SCAN_DIRS that exist; fall back to cwd.
-  const roots = SCAN_DIRS.map((d) => join(cwd, d)).filter(existsSync);
+  let paths;
+  try {
+    paths = resolvePaths(opts, cwd);
+    if (opts.config !== undefined && !paths.config) {
+      throw new Error(`Configuration file ${opts.config || "(empty path)"} not found.`);
+    }
+  } catch (error) {
+    err(error.message);
+    process.exitCode = 1;
+    return;
+  }
+
+  const projectDir = paths.configPath ? dirname(paths.configPath) : cwd;
+  const target = relative(cwd, paths.source) || paths.source;
+  const isDirectory = (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory();
+  const scanDirs = opts.root === undefined
+    ? SCAN_DIRS.map((dir) => join(projectDir, dir))
+    : opts.root ? [resolve(cwd, opts.root)] : [];
+  const roots = scanDirs.filter(isDirectory);
   if (roots.length === 0) {
-    warn(`No conventional source directory (${SCAN_DIRS.join(", ")}) found in ${cwd}.`);
-    info("Pass --root <path> to scan a custom directory. Skipping.");
+    if (opts.root !== undefined) {
+      err(`Scan directory ${opts.root || "(empty path)"} not found.`);
+      process.exitCode = 1;
+      return;
+    }
+    warn(`No conventional source directory (${SCAN_DIRS.join(", ")}) found in ${projectDir}.`);
+    info("Pass --root <path> to scan a custom directory.");
     return;
   }
 
@@ -71,7 +106,7 @@ export async function run(args = []) {
     }
     const rel = relative(cwd, f);
     for (const cand of extractCandidates(text)) {
-      const key = suggestKey(cand.text, rel);
+      const key = suggestKey(cand.text, relative(projectDir, f));
       allCandidates.push({ file: rel, line: cand.line, text: cand.text, key });
     }
   }
@@ -106,7 +141,7 @@ export async function run(args = []) {
   }
 
   if (!opts.write) {
-    step("Suggested additions to messages/en.json");
+    step(`Suggested additions to ${target}`);
     process.stdout.write(JSON.stringify(merged, null, 2) + "\n");
   }
 
@@ -114,20 +149,20 @@ export async function run(args = []) {
   info(`Found ${c.bold}${allCandidates.length}${c.reset} candidate${allCandidates.length === 1 ? "" : "s"} across ${c.bold}${byFile.size}${c.reset} file${byFile.size === 1 ? "" : "s"}.`);
 
   if (opts.write) {
-    const target = opts.source || "messages/en.json";
-    const full = join(cwd, target);
+    const full = paths.source;
     let existing = {};
     if (existsSync(full)) {
       try {
         existing = JSON.parse(readFileSync(full, "utf8"));
       } catch (e) {
         err(`Couldn't parse ${target}: ${e.message}. Aborting --write.`);
+        process.exitCode = 1;
         return;
       }
     }
     const { merged: out, added, skipped, conflicts } = mergeKeys(existing, allCandidates);
 
-    step(opts.source ? `Writing ${target}` : "Writing messages/en.json");
+    step(`Writing ${target}`);
     mkdirSync(dirname(full), { recursive: true });
     writeFileSync(full, JSON.stringify(out, null, 2) + "\n");
     ok(`${target} now has ${added.length} new key${added.length === 1 ? "" : "s"}.`);
@@ -159,6 +194,6 @@ export async function run(args = []) {
   }
 
   step("Next");
-  info(`Review the candidates above. Copy the relevant ones into ${c.bold}messages/en.json${c.reset} (or re-run with ${c.bold}--write${c.reset} to do it automatically), then replace the hardcoded string in your component with a ${c.bold}t("${c.dim}<key>${c.reset}${c.bold}")${c.reset} call.`);
+  info(`Review the candidates above. Copy the relevant ones into ${c.bold}${target}${c.reset} (or re-run with ${c.bold}--write${c.reset} to do it automatically), then replace the hardcoded string in your component with a ${c.bold}t("${c.dim}<key>${c.reset}${c.bold}")${c.reset} call.`);
   info("Default mode is read-only. Use --write to merge into messages/en.json (existing keys are never overwritten).");
 }

@@ -6,7 +6,7 @@ Be kind. Don't be racist, sexist, or harassing. Disagreements about technical de
 
 ## Reporting
 
-Email `ffcabbar@gmail.com`. I read every report and act on it.
+Use GitHub's **Report content** option to flag inappropriate issues, pull requests, or comments. Choose **Report to repository admins** if available. For other reports, see [GitHub's abuse reporting guide](https://docs.github.com/en/communities/maintaining-your-safety-on-github/reporting-abuse-or-spam).
 
 ## Long version
 

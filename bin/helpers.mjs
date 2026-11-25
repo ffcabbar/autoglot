@@ -92,7 +92,7 @@ export function parseLockYaml(raw, defaultSource = "") {
       if (m) { lock.source = m[1]; continue; }
       if (/^hashes:\s*$/.test(line)) { inHashes = true; continue; }
     } else {
-      const m = line.match(/^\s{2}(\S+):\s*(\S+)\s*$/);
+      const m = line.match(/^\s{2}(.+):\s*(\S+)\s*$/);
       if (m) lock.hashes[m[1]] = m[2];
       else if (!/^\s/.test(line)) inHashes = false;
     }
@@ -111,7 +111,7 @@ export function dumpLockYaml(lock) {
 export function allowedTopLevelNamespaces(source, locale, cfg) {
   const out = new Set();
   for (const ns of Object.keys(source)) {
-    const restriction = cfg.namespaces?.[ns];
+    const restriction = cfg.namespaces?.[ns] ?? cfg.namespaces?.[ns.split(".")[0]];
     if (!restriction || restriction.includes(locale)) out.add(ns);
   }
   return out;

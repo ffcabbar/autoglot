@@ -38,11 +38,13 @@ init flags
 extract flags
   --write                     Merge candidates into messages/en.json (existing
                               keys are never overwritten).
-  --source=<path>             Override the target file (default: messages/en.json).
+  --source=<path>             Override the configured source catalog.
+  --config=<path>             Select an autoglot configuration.
+  --root=<path>               Override the directory to scan.
 
 Translation flags (when no subcommand given)
-  --check                     CI gate: exit 1 if lock != source. No AI call.
-  --dry-run                   Show plan, no AI call, no writes.
+  --check                     Exit 1 if the lock or selected locales need updates.
+  --dry-run                   Show the plan without calling AI or updating translations.
   --quiet                     Suppress per-locale progress (auto-disabled in CI).
   --locales=de,fr             Restrict run to specific locales.
   --model=<id>                Override the configured model (default: claude-haiku-4-5).
@@ -54,7 +56,7 @@ Translation flags (when no subcommand given)
   --summary-path=<path>       Where to write the markdown summary.
 
 Environment
-  ANTHROPIC_API_KEY           Required for real runs. Not needed for --check or --dry-run.
+  ANTHROPIC_API_KEY           Required when sending translation requests.
 
 Docs
   https://github.com/ffcabbar/autoglot
@@ -92,7 +94,7 @@ if (first === "doctor") {
 if (first === "extract") {
   const m = await import("./extract.mjs");
   await m.run(argv.slice(1));
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }
 
 // Unknown subcommand sanity check: if first arg looks like a subcommand

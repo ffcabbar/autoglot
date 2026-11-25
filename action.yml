@@ -11,23 +11,18 @@ inputs:
   source:
     description: 'Path to your source locale file (e.g. messages/en.json).'
     required: false
-    default: 'messages/en.json'
   messages-dir:
     description: 'Directory containing your locale JSON files.'
     required: false
-    default: 'messages'
   lock-file:
     description: 'Path to the translation lock file.'
     required: false
-    default: 'translate.lock'
   config:
     description: 'Path to translate.config.json.'
     required: false
-    default: 'translate.config.json'
   model:
     description: 'Anthropic model id.'
     required: false
-    default: 'claude-haiku-4-5'
   commit:
     description: 'If "true", commit and push translation changes back to the branch.'
     required: false
@@ -37,15 +32,14 @@ inputs:
     required: false
     default: 'true'
   package-version:
-    description: 'Pin a specific package version for reproducibility.'
+    description: 'Use a specific npm version or dist-tag. Defaults to the CLI bundled with this Action ref.'
     required: false
-    default: 'latest'
 
 runs:
   using: composite
   steps:
     - name: Setup Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: 22
 
@@ -54,24 +48,31 @@ runs:
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         SUMMARY_PATH: ${{ runner.temp }}/translate-summary.md
-      run: |
-        npx -y autoglot@${{ inputs.package-version }} \
-          --source="${{ inputs.source }}" \
-          --messages-dir="${{ inputs.messages-dir }}" \
-          --lock-file="${{ inputs.lock-file }}" \
-          --config="${{ inputs.config }}" \
-          --model="${{ inputs.model }}" \
-          --summary-path="${SUMMARY_PATH}"
+        ACTION_PATH: ${{ github.action_path }}
+        AUTOGLOT_SOURCE: ${{ inputs.source }}
+        AUTOGLOT_MESSAGES_DIR: ${{ inputs.messages-dir }}
+        AUTOGLOT_LOCK_FILE: ${{ inputs.lock-file }}
+        AUTOGLOT_CONFIG: ${{ inputs.config }}
+        AUTOGLOT_MODEL: ${{ inputs.model }}
+        AUTOGLOT_PACKAGE_VERSION: ${{ inputs.package-version }}
+      run: node "$ACTION_PATH/.github/scripts/action-cli.mjs"
 
     - name: Commit and push translations
       if: inputs.commit == 'true'
       id: commit
       shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        AUTOGLOT_SOURCE: ${{ inputs.source }}
+        AUTOGLOT_MESSAGES_DIR: ${{ inputs.messages-dir }}
+        AUTOGLOT_LOCK_FILE: ${{ inputs.lock-file }}
+        AUTOGLOT_CONFIG: ${{ inputs.config }}
+        SUMMARY_PATH: ${{ runner.temp }}/translate-summary.md
       run: |
         set -euo pipefail
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add "${{ inputs.messages-dir }}"/*.json "${{ inputs.lock-file }}"
+        node "$ACTION_PATH/.github/scripts/action-cli.mjs" stage
         if git diff --cached --quiet; then
           echo "No translation changes — skipping."
           echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -104,9 +105,9 @@ runs:
         {
           echo "chore(i18n): update translations"
           echo
-          cat "${{ runner.temp }}/translate-summary.md"
-        } > "${{ runner.temp }}/translate-commit-msg.txt"
-        git commit -F "${{ runner.temp }}/translate-commit-msg.txt"
+          cat "$SUMMARY_PATH"
+        } > "$RUNNER_TEMP/translate-commit-msg.txt"
+        git commit -F "$RUNNER_TEMP/translate-commit-msg.txt"
         for attempt in 1 2 3; do
           git rebase --abort 2>/dev/null || true
           if git pull --rebase origin "$BRANCH" \
@@ -125,19 +126,24 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        SUMMARY_PATH: ${{ runner.temp }}/translate-summary.md
       run: |
         set -euo pipefail
         BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
-        PR=$(gh pr list --head "$BRANCH" --state open \
-          --json number --jq '.[0].number // empty')
+        PR="$PR_NUMBER"
+        if [ -z "$PR" ]; then
+          PR=$(gh pr list --head "$BRANCH" --state open \
+            --json number,isCrossRepository --jq '[.[] | select(.isCrossRepository == false)][0].number // empty')
+        fi
         if [ -z "${PR}" ]; then
-          echo "No open PR for ${GITHUB_REF_NAME} — skipping comment."
+          echo "No open PR for ${BRANCH} — skipping comment."
           exit 0
         fi
         {
-          cat "${{ runner.temp }}/translate-summary.md"
+          cat "$SUMMARY_PATH"
           echo
           echo "---"
           echo "_Triggered by [\`${GITHUB_SHA:0:7}\`](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) · [view workflow run](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})_"
-        } > "${{ runner.temp }}/translate-comment.md"
-        gh pr comment "${PR}" --body-file "${{ runner.temp }}/translate-comment.md"
+        } > "$RUNNER_TEMP/translate-comment.md"
+        gh pr comment "${PR}" --body-file "$RUNNER_TEMP/translate-comment.md"

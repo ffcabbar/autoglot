@@ -1,87 +1,40 @@
-<!-- HERO BANNER
-  File:   .github/assets/hero.png
-  Size:   1280x640 (2:1) — also used as GitHub social card (Settings → Social preview)
-  Prompt: "A minimal, modern banner for an open-source dev tool called 'autoglot'.
-           Centered wordmark in a clean geometric sans-serif (Inter / Geist), with
-           a small globe-and-translation glyph to the left. Background: subtle
-           purple-to-near-black diagonal gradient (#1a0b2e → #4c1d95). White text.
-           Tagline below the wordmark in a smaller weight: 'AI translation bot for
-           your i18n JSON. MIT, single-file, your API key.' Flat, no 3D, no AI
-           glow effects. Looks at home next to Vercel/Resend/Linear branding."
--->
-<p align="center">
-  <img src=".github/assets/hero.svg" alt="autoglot — AI-powered i18n translation bot" width="820">
-</p>
-
 <h1 align="center">autoglot</h1>
 
+<p align="center"><strong>One source catalog. Translations that keep up with your code.</strong></p>
+
 <p align="center">
-  <strong>AI-powered i18n translation bot.</strong> Edit <code>en.json</code>, push, and your other locale files appear translated in a bot commit.<br>
-  MIT alternative to <a href="https://languine.ai">Languine</a>, Lokalise, and Crowdin.
+  <img src=".github/assets/hero-prism.webp" width="900" alt="A glass prism splits a single violet beam toward three tiles with different writing systems">
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/autoglot"><img src="https://img.shields.io/npm/v/autoglot.svg?color=8b5cf6&label=npm" alt="npm"></a>
-  <a href="https://www.npmjs.com/package/autoglot"><img src="https://img.shields.io/npm/dm/autoglot.svg?color=8b5cf6" alt="downloads"></a>
-  <a href="https://github.com/ffcabbar/autoglot/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/autoglot.svg?color=8b5cf6" alt="license MIT"></a>
-  <a href="https://github.com/marketplace/actions/autoglot"><img src="https://img.shields.io/badge/marketplace-autoglot-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Marketplace"></a>
-  <a href="https://github.com/ffcabbar/autoglot/stargazers"><img src="https://img.shields.io/github/stars/ffcabbar/autoglot?style=flat&color=8b5cf6" alt="stars"></a>
-  <a href="https://github.com/sponsors/ffcabbar"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-ec4899" alt="Sponsor"></a>
+  <a href="https://www.npmjs.com/package/autoglot"><img src="https://img.shields.io/npm/v/autoglot?color=8b5cf6" alt="npm version"></a>
+  <a href="https://github.com/ffcabbar/autoglot/actions/workflows/ci.yml"><img src="https://github.com/ffcabbar/autoglot/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/ffcabbar/autoglot/tree/v1"><img src="https://img.shields.io/badge/GitHub%20Action-v1-8b5cf6?logo=githubactions&logoColor=white" alt="GitHub Action v1"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/autoglot?color=8b5cf6" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <a href="#quickstart-github-action">Quickstart</a> ·
+  <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#vs-the-alternatives">vs. Languine / Lokalise</a> ·
-  <a href="#configuration">Config</a> ·
-  <a href="#models-and-cost">Cost</a> ·
-  <a href="#faq">FAQ</a>
+  <a href="#configuration">Configuration</a> ·
+  <a href="#cli-flags">CLI reference</a>
 </p>
 
----
+autoglot translates JSON message catalogs with Claude. Edit your source locale, then run the CLI or let the GitHub Action commit the updated translations to your branch. Your runtime library, such as [next-intl](https://next-intl.dev/), [react-i18next](https://react.i18next.com/), or [Vue I18n](https://vue-i18n.intlify.dev/), reads the resulting files.
 
-<!-- DEMO GIF — record after the first real PR run.
-     File: .github/assets/demo.gif (1280x720, ≤ 8 MB, ≤ 30 s)
-     Drop the file in and uncomment the <p> tag below.
-<p align="center">
-  <img src=".github/assets/demo.gif" alt="autoglot in action: edit en.json, push, watch the bot translate and commit." width="820">
-</p>
--->
+- **Incremental.** A committed lock file tracks source strings. autoglot translates new, changed, and missing keys and removes orphaned entries.
+- **Runs where you work.** Use Node.js 20+ locally or in CI. The CLI has zero runtime dependencies and sends translation requests to Anthropic with your API key.
+- **Reviewable.** The GitHub Action commits JSON changes and can post token usage and estimated cost on an open PR.
 
-## What it is (and isn't)
+## Quickstart
 
-autoglot **fills in your missing locale files**. You write `messages/en.json`. autoglot writes `messages/es.json`, `messages/de.json`, etc. by calling Claude on every push.
-
-It is **not** a runtime i18n library. You still need [`next-intl`](https://next-intl.dev/), [`react-i18next`](https://react.i18next.com/), [`vue-i18n`](https://vue-i18n.intlify.dev/), or similar to read those JSON files in your app and resolve `t("...")` calls. autoglot is the translator; your i18n library is the reader.
-
-## Why
-
-- **Zero npm dependencies.** Single Node 20+ script. Auditable in 30 minutes.
-- **Incremental.** A YAML lock file fingerprints every English string; only changed/new keys are sent to the LLM.
-- **Free, except for the API key.** No SaaS, no rate limits, no quota. You pay Anthropic directly — typical PR costs **under a cent**.
-- **CI-native.** Ships as a GitHub Action. The bot commits the translated JSON back to your branch and posts a cost report on the PR.
-- **Framework-agnostic.** Works with `next-intl`, `react-i18next`, `vue-i18n`, `i18next`, anything that reads a flat-or-nested JSON message catalog.
-
-<!-- PR COMMENT — placeholder mockup. Replace with a real screenshot once you have one.
-     File: .github/assets/pr-comment.png (1024x600). Until you do, the .svg mockup is fine. -->
-<p align="center">
-  <img src=".github/assets/pr-comment.svg" alt="The bot posts a cost summary as a PR comment" width="720">
-</p>
-
-## Quickstart — `npx autoglot init` (30 seconds)
-
-Inside any project:
+Run this in your app directory and choose your target locales.
 
 ```bash
 npx autoglot init
 ```
 
-That's it. The CLI:
-
-- detects your framework (see table below) and picks the right runtime i18n library to recommend
-- asks which target locales to support (interactive multi-select)
-- scaffolds `messages/en.json`, empty `messages/<locale>.json` per language, `translate.config.json`, the `.github/workflows/translate.yml` workflow, and framework-specific glue
-- never overwrites existing files (skips them and prints a clear plan before writing)
+Review the generated files, install the suggested i18n library, and add `ANTHROPIC_API_KEY` to your GitHub repository secrets. Edit `messages/en.json` and push your branch. For a local preview of the translation plan, run `npx autoglot --dry-run`.
 
 ### Supported frameworks
 
@@ -95,7 +48,7 @@ That's it. The CLI:
 | **Vue / Nuxt** | `vue-i18n` | `src/i18n.ts` (Composition API mode) |
 | **Generic / unknown** | (your choice) | Messages + workflow only — pair with any i18n library that reads JSON |
 
-After init, three things to finish:
+Install the runtime package and configure the GitHub secret.
 
 ```bash
 # 1. Install the runtime i18n library — or let init do it:
@@ -107,8 +60,6 @@ gh secret set ANTHROPIC_API_KEY
 
 # 3. Edit messages/en.json with real strings, then push.
 ```
-
-Push → GitHub Action runs → bot commits `messages/<locale>.json` translations + cost summary on the PR.
 
 ## Other commands
 
@@ -125,11 +76,11 @@ npx autoglot --help              # full flag list
 
 ### Monorepo
 
-All commands work from any subdirectory. Drop a `translate.config.json` next to the app whose messages you want translated (e.g. `apps/mobile/translate.config.json`) — paths inside the config resolve against the config file's directory, like eslint/vitest/tsconfig. `autoglot doctor` walks up to the repo root to find your workflow regardless of its filename (`translate.yml`, `translate-mobile.yml`, etc.).
+Keep `translate.config.json` next to each app’s catalog. Translation, `add`, and `doctor` look for the config in the current directory and its parents. To select an app from the repository root, pass `--config=apps/mobile/translate.config.json`. Paths inside the config are relative to the config file. Keep GitHub workflows in the repository root’s `.github/workflows/` directory.
 
 ## Quickstart — GitHub Action (manual setup)
 
-If you'd rather skip `init` and write the workflow yourself:
+Copy this workflow to `.github/workflows/translate.yml` to set up the Action by hand.
 
 ```yaml
 # .github/workflows/translate.yml
@@ -162,7 +113,7 @@ Add `ANTHROPIC_API_KEY` to your repo secrets, drop a `messages/en.json`, create 
 
 ### Want it to run on pull requests instead?
 
-Switch the trigger to `pull_request` and tell `actions/checkout` to use the PR's source branch (otherwise the runner checks out a synthetic merge ref that the bot can't push back to):
+Switch the trigger to `pull_request` and tell `actions/checkout` to use the PR's source branch. The job below runs on pull requests from branches in the same repository.
 
 ```yaml
 on:
@@ -173,6 +124,7 @@ on:
 jobs:
   translate:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: write
       pull-requests: write
@@ -191,7 +143,8 @@ The action detects pull_request events automatically and pushes translations to 
 
 ```bash
 npm install -D autoglot
-ANTHROPIC_API_KEY=sk-ant-... npx autoglot
+npx autoglot --dry-run
+npx autoglot       # Set ANTHROPIC_API_KEY in your environment first
 ```
 
 Works in any CI (GitLab, CircleCI, Jenkins) or on your laptop.
@@ -240,13 +193,13 @@ Works in any CI (GitLab, CircleCI, Jenkins) or on your laptop.
 | `model` | `claude-haiku-4-5` | Anthropic model. Haiku is recommended; quality is excellent. |
 | `glossary` | `[]` | Product/brand names the model must keep verbatim. |
 | `namespaceContext` | `{}` | Hint the model about each top-level namespace. Improves quality. |
-| `namespaces` | `{}` | Deny-list. Listed namespaces are restricted to listed locales; unlisted namespaces translate to all locales. |
+| `namespaces` | `{}` | Map namespaces to their target locale lists. Other namespaces go to all target locales. |
 
 ## CLI flags
 
 ```
---check                  CI gate: exit 1 if lock != source. No AI call.
---dry-run                Show plan, no AI call, no writes.
+--check                 Exit 1 when translation updates are pending. No API call.
+--dry-run               Preview the translation plan without updating catalogs.
 --quiet                  Suppress per-locale and per-chunk progress. CI keeps verbose logs.
 --locales=de,fr          Restrict run to specific locales.
 --model=<id>             Override the configured model.
@@ -254,7 +207,8 @@ Works in any CI (GitLab, CircleCI, Jenkins) or on your laptop.
 --messages-dir=<path>    Override config.messagesDir.
 --lock-file=<path>       Override config.lockFile.
 --config=<path>          Custom config file path.
---import-languine[=path] Seed our lock file from a `languine.lock`.
+--import-languine[=path] Seed the lock file from languine.lock.
+--summary-path=<path>   Write the Markdown translation summary here.
 -v, --version            Print version and exit.
 -h, --help               Print help and exit.
 ```
@@ -263,31 +217,23 @@ Works in any CI (GitLab, CircleCI, Jenkins) or on your laptop.
 
 | Model | Cost (per 1M tokens) | When to use |
 |---|---|---|
-| `claude-haiku-4-5` *(default)* | $1 in / $5 out | Everything. |
-| `claude-sonnet-4-6` | $3 in / $15 out | A specific locale where Haiku quality slips. |
-| `claude-opus-4-7` | $15 in / $75 out | You almost certainly don't need this. |
+| `claude-haiku-4-5` *(default)* | $1 in / $5 out | General translation |
+| `claude-sonnet-4-6` | $3 in / $15 out | Copy that needs more nuance |
+| `claude-opus-4-7` | $5 in / $25 out | Longer or more complex copy |
 
-Typical PR (1–3 changed keys × 30 locales) costs under a cent on Haiku. A first-run backfill of ~2,000 keys × 30 locales is around $1–$3.
+Cost depends on the catalog, target locales, and token usage. See [Anthropic’s pricing](https://platform.claude.com/docs/en/about-claude/pricing) for current rates.
 
 ## Migrating from Languine
 
 ```bash
 npx autoglot --import-languine=languine.lock
-rm languine.json languine.lock
+npx autoglot --dry-run
 ```
 
-Then replace your Languine workflow with the one above. The lock file will be in sync — no re-translation, no re-cost.
+Keep your existing locale files and review the dry-run output before replacing the Languine workflow. Missing translations and strings that changed since the imported hashes will appear in the plan.
 
 ## How it works
 
-<!-- ARCHITECTURE DIAGRAM (optional)
-  File:   .github/assets/how-it-works.svg
-  Prompt: "A simple horizontal flowchart with 5 boxes connected by arrows:
-           [en.json edit] → [diff vs lock file] → [Anthropic API: only changed keys]
-           → [merge into <locale>.json files] → [bot commit + PR comment].
-           Monochrome dark theme, purple accent (#8b5cf6). Looks like a Linear
-           or Stripe docs diagram. Inter font."
--->
 <p align="center">
   <img src=".github/assets/how-it-works.svg" alt="autoglot architecture: diff → translate → merge → commit" width="1100">
 </p>
@@ -313,7 +259,7 @@ Yes. `npx autoglot init` has explicit support for **Next.js (App Router & Pages 
 <details>
 <summary><strong>What about ICU plurals, dates, gender?</strong></summary>
 
-ICU syntax (`{count, plural, one {# day} other {# days}}`) is preserved by the system prompt to Claude. The placeholder validator covers `{name}` tokens; for ICU we rely on the model — in practice Haiku 4.5 handles it correctly. If you spot a regression, open an issue.
+ICU syntax (`{count, plural, one {# day} other {# days}}`) is preserved by the system prompt to Claude. The placeholder validator covers `{name}` tokens; ICU structure is handled by the model and should be reviewed in the resulting JSON.
 
 </details>
 
@@ -327,14 +273,14 @@ JSON covers ~95% of JS app i18n. Adding YAML / `.strings` / Android XML triples 
 <details>
 <summary><strong>Why not OpenAI / Gemini?</strong></summary>
 
-Coming in v0.2. Anthropic's tool use is the most stable for structured output today, which is why v0.1 ships Anthropic-only. Each provider's tool semantics differ subtly; we'd rather wait until we have tests for all three.
+The current release supports Anthropic. Follow the [roadmap](ROADMAP.md) for provider plans.
 
 </details>
 
 <details>
 <summary><strong>Is the bot a "real" GitHub bot with an avatar?</strong></summary>
 
-Not yet. v0.1 commits as `github-actions[bot]` (the default rabbit avatar). A real GitHub App with the autoglot logo is on the roadmap — see `docs/distribution.md` for the four levels of bot identity and why we chose Level 1 to start.
+The Action writes commits as GitHub’s built-in `github-actions[bot]` account.
 
 </details>
 
@@ -359,7 +305,7 @@ Add them to `glossary` in `translate.config.json`. They'll be passed to Claude w
 - [ ] **v0.3** — YAML / `.strings` / Android XML formats (gated on demand)
 - [ ] **v0.4** — Hosted GitHub App (real bot avatar, one-click install) — paid tier, OSS still first-class
 
-See [`RELEASE_PLAN.md`](./RELEASE_PLAN.md) for the full plan.
+See the [roadmap](ROADMAP.md) for upcoming work and the [open issues](https://github.com/ffcabbar/autoglot/issues) for current maintenance tasks.
 
 ## Contributing
 
