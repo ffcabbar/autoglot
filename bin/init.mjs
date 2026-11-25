@@ -110,7 +110,9 @@ export async function run(argv = []) {
     targetLocales = await multiselect("Which target locales to translate into?", localeChoices);
     if (targetLocales.length === 0) {
       err("Need at least one target locale. Aborting.");
-      process.exit(1);
+      process.exitCode = 1;
+      closePrompts();
+      return;
     }
 
     const customLocale = await ask("Add another locale not in the list? (ISO code, e.g. \"hi\")", "");

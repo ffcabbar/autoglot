@@ -15,7 +15,6 @@
 
 import { readFileSync } from "node:fs";
 
-const SUBCOMMANDS = new Set(["init", "add", "doctor", "extract", "help"]);
 const argv = process.argv.slice(2);
 const first = argv[0];
 
@@ -77,35 +76,22 @@ if (first === "--help" || first === "-h" || first === "help") {
 if (first === "init") {
   const m = await import("./init.mjs");
   await m.run(argv.slice(1));
-  process.exit(process.exitCode ?? 0);
-}
-
-if (first === "add") {
+} else if (first === "add") {
   const m = await import("./add.mjs");
   await m.run(argv.slice(1));
   process.exit(0);
-}
-
-if (first === "doctor") {
+} else if (first === "doctor") {
   const m = await import("./doctor.mjs");
   await m.run(argv.slice(1));
   process.exit(0);
-}
-
-if (first === "extract") {
+} else if (first === "extract") {
   const m = await import("./extract.mjs");
   await m.run(argv.slice(1));
   process.exit(process.exitCode ?? 0);
-}
-
-// Unknown subcommand sanity check: if first arg looks like a subcommand
-// (no leading dash, not a known one), warn the user instead of silently
-// passing it through to the translator.
-if (first && !first.startsWith("-") && !SUBCOMMANDS.has(first)) {
+} else if (first && !first.startsWith("-")) {
   process.stderr.write(`autoglot: unknown subcommand '${first}'.\n`);
   process.stderr.write(`Run \`autoglot --help\` for the list of subcommands.\n`);
   process.exit(2);
+} else {
+  await import("./translate.mjs");
 }
-
-// Fall through to the translation engine.
-await import("./translate.mjs");
