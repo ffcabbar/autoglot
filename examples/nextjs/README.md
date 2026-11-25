@@ -2,6 +2,8 @@
 
 Field Notes is a small nature journal landing page with English and Spanish routes. Next.js renders both routes from the JSON catalogs in `messages/`. The app runs with the committed translations and needs no API key.
 
+The demo loads the JSON catalogs directly in its App Router routes. When you run `autoglot init` in a new App Router project, Autoglot suggests a `next-intl` scaffold.
+
 ## Run locally
 
 Use Node.js 20.9 or later. From the repository root, run:
