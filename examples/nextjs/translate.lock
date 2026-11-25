@@ -1,0 +1,9 @@
+version: 1
+source: messages/en.json
+hashes:
+  navigation.languages: 653777801f96237326d65205bc9129e3
+  guide.name: aa74ef26e09f6d23b6bb30fad66e77dc
+  guide.title: c3ef75eb090ad6ed48959f9dd1f66efe
+  guide.description: f9e5b4c1519aea03538896330299b381
+  guide.tipTitle: 3e6775b9b54e7c439bafed4cf6c16e46
+  guide.tip: 6012067f3d5108163dafdc8f4908d0bc

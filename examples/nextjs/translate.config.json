@@ -1,0 +1,9 @@
+{
+  "source": "messages/en.json",
+  "messagesDir": "messages",
+  "lockFile": "translate.lock",
+  "namespaceContext": {
+    "navigation": "Accessible labels for a website's language navigation.",
+    "guide": "Friendly, concise copy for a nature journal."
+  }
+}
