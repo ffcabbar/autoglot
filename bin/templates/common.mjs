@@ -70,3 +70,7 @@ export function exampleEnJson() {
 export function emptyLocale() {
   return "{}\n";
 }
+
+export function localeImportName(locale) {
+  return `locale_${locale.replace(/[^a-zA-Z0-9_$]/g, "_")}`;
+}

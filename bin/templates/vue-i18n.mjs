@@ -3,13 +3,15 @@
 // Generates src/i18n.ts using the vue-i18n composition API. The user
 // installs the plugin in main.ts: app.use(i18n).
 
+import { localeImportName } from "./common.mjs";
+
 /** @param {{ defaultLocale: string, locales: string[] }} ctx */
 export function i18nTs(ctx) {
   const imports = ctx.locales
-    .map((l) => `import ${jsId(l)} from "../messages/${l}.json";`)
+    .map((l) => `import ${localeImportName(l)} from "../messages/${l}.json";`)
     .join("\n");
   const messages = ctx.locales
-    .map((l) => `    ${quoteIfNeeded(l)}: ${jsId(l)},`)
+    .map((l) => `    ${quoteIfNeeded(l)}: ${localeImportName(l)},`)
     .join("\n");
 
   return `import { createI18n } from "vue-i18n";
@@ -43,9 +45,6 @@ export function followupNotes() {
   ];
 }
 
-function jsId(loc) {
-  return loc.replace(/[^a-zA-Z0-9_$]/g, "_");
-}
 function quoteIfNeeded(loc) {
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(loc) ? loc : JSON.stringify(loc);
 }

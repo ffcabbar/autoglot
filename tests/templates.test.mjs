@@ -109,9 +109,9 @@ describe("react-native template", () => {
 
   test("indexTs imports each locale", () => {
     const t = rn.indexTs(ctx);
-    assert.match(t, /import en from "\.\.\/\.\.\/messages\/en\.json"/);
-    assert.match(t, /import es from "\.\.\/\.\.\/messages\/es\.json"/);
-    assert.match(t, /import tr from "\.\.\/\.\.\/messages\/tr\.json"/);
+    assert.match(t, /import locale_en from "\.\.\/\.\.\/messages\/en\.json"/);
+    assert.match(t, /import locale_es from "\.\.\/\.\.\/messages\/es\.json"/);
+    assert.match(t, /import locale_tr from "\.\.\/\.\.\/messages\/tr\.json"/);
   });
 
   test("indexTs registers initReactI18next + compatibilityJSON v4", () => {
@@ -123,8 +123,8 @@ describe("react-native template", () => {
 
   test("locale codes with dashes are sanitized for JS identifiers", () => {
     const t = rn.indexTs({ defaultLocale: "en", locales: ["en", "zh-CN"] });
-    assert.match(t, /import zh_CN from/);
-    assert.match(t, /"zh-CN": \{ translation: zh_CN \}/);
+    assert.match(t, /import locale_zh_CN from/);
+    assert.match(t, /"zh-CN": \{ translation: locale_zh_CN \}/);
   });
 
   test("files() returns one file at src/i18n/index.ts", () => {
@@ -143,8 +143,8 @@ describe("vite-react template", () => {
 
   test("i18nTs imports from ../messages/", () => {
     const t = vite.i18nTs(ctx);
-    assert.match(t, /import en from "\.\.\/messages\/en\.json"/);
-    assert.match(t, /import fr from "\.\.\/messages\/fr\.json"/);
+    assert.match(t, /import locale_en from "\.\.\/messages\/en\.json"/);
+    assert.match(t, /import locale_fr from "\.\.\/messages\/fr\.json"/);
   });
 
   test("file is at src/i18n.ts", () => {

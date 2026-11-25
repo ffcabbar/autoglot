@@ -7,13 +7,15 @@
 //   3. Optionally wire device-locale detection with expo-localization
 //      or react-native-localize — we don't pick one for them.
 
+import { localeImportName } from "./common.mjs";
+
 /** @param {{ defaultLocale: string, locales: string[] }} ctx */
 export function indexTs(ctx) {
   const imports = ctx.locales
-    .map((l) => `import ${jsId(l)} from "../../messages/${l}.json";`)
+    .map((l) => `import ${localeImportName(l)} from "../../messages/${l}.json";`)
     .join("\n");
   const resources = ctx.locales
-    .map((l) => `    ${quoteIfNeeded(l)}: { translation: ${jsId(l)} },`)
+    .map((l) => `    ${quoteIfNeeded(l)}: { translation: ${localeImportName(l)} },`)
     .join("\n");
 
   return `import i18n from "i18next";
@@ -51,12 +53,6 @@ export function followupNotes() {
   ];
 }
 
-// Locale codes are usually safe ids (en, es, de, zh-CN), but zh-CN contains a
-// dash which isn't a valid JS identifier. Use a sanitized name for the import
-// binding and quote the property key on the way out.
-function jsId(loc) {
-  return loc.replace(/[^a-zA-Z0-9_$]/g, "_");
-}
 function quoteIfNeeded(loc) {
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(loc) ? loc : JSON.stringify(loc);
 }

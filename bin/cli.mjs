@@ -31,6 +31,7 @@ Usage
   npx autoglot --help | -h           Print help
 
 init flags
+  --locales=de,fr             Scaffold these target locales without prompts.
   --install                   Install runtime i18n library after scaffolding.
   --no-install                Skip the interactive install prompt.
   --pm=npm|yarn|pnpm|bun      Override the auto-detected package manager.
@@ -76,7 +77,7 @@ if (first === "--help" || first === "-h" || first === "help") {
 if (first === "init") {
   const m = await import("./init.mjs");
   await m.run(argv.slice(1));
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }
 
 if (first === "add") {

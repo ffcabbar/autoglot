@@ -5,13 +5,15 @@
 // We scaffold an i18n init that auto-picks the device locale and falls
 // back to the configured default.
 
+import { localeImportName } from "./common.mjs";
+
 /** @param {{ defaultLocale: string, locales: string[] }} ctx */
 export function indexTs(ctx) {
   const imports = ctx.locales
-    .map((l) => `import ${jsId(l)} from "../../messages/${l}.json";`)
+    .map((l) => `import ${localeImportName(l)} from "../../messages/${l}.json";`)
     .join("\n");
   const resources = ctx.locales
-    .map((l) => `    ${quoteIfNeeded(l)}: { translation: ${jsId(l)} },`)
+    .map((l) => `    ${quoteIfNeeded(l)}: { translation: ${localeImportName(l)} },`)
     .join("\n");
   const localesArr = ctx.locales.map((l) => JSON.stringify(l)).join(", ");
 
@@ -58,9 +60,6 @@ export function followupNotes() {
   ];
 }
 
-function jsId(loc) {
-  return loc.replace(/[^a-zA-Z0-9_$]/g, "_");
-}
 function quoteIfNeeded(loc) {
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(loc) ? loc : JSON.stringify(loc);
 }
