@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased (0.3.4)
+## Unreleased (0.4.0)
+
+### Added
+
+- Run `autoglot init --locales=de,pt-BR` for unattended setup with explicit target locales. Pass `--install` to opt into runtime dependency installation.
+- Runnable [Next.js App Router](https://github.com/ffcabbar/autoglot/tree/main/examples/nextjs) and [Expo Android](https://github.com/ffcabbar/autoglot/tree/main/examples/expo-android) examples in the repository. Both include source and translated catalogs, a translation lock, and a keyless dry-run script.
+
+## [0.3.4] - 2026-11-22
 
 ### Fixed
 
