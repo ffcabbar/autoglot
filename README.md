@@ -53,7 +53,7 @@ Setup creates the missing files and skips paths that already exist. The dry run 
 |---|---|---|
 | **Next.js (App Router)** | `next-intl` | `src/i18n/routing.ts`, `src/i18n/request.ts`, `src/middleware.ts`, plus a starter `src/app/[locale]/layout.tsx` + `page.tsx` if no `[locale]` segment exists |
 | **Next.js (Pages Router)** | `next-i18next` | Messages + workflow only; prints precise wiring steps (next.config.js i18n block, `appWithTranslation` HOC, `serverSideTranslations` in pages) |
-| **Expo** | `i18next` + `react-i18next` + `expo-localization` | `src/i18n/index.ts` with device-locale auto-detect on app start |
+| **Expo** | `i18next` + `react-i18next` + `expo-localization` | `src/i18n/index.ts` with device-locale auto-detect on app start. [Runnable Android example](examples/expo-android) |
 | **React Native (bare)** | `i18next` + `react-i18next` | `src/i18n/index.ts` with all locales registered |
 | **Vite + React** | `i18next` + `react-i18next` | `src/i18n.ts` |
 | **Vue / Nuxt** | `vue-i18n` | `src/i18n.ts` (Composition API mode) |

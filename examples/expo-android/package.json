@@ -1,0 +1,26 @@
+{
+  "name": "autoglot-example-expo-android",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "export:android": "expo export --platform android",
+    "translations:dry-run": "autoglot --dry-run",
+    "translations:check": "autoglot --check"
+  },
+  "dependencies": {
+    "expo": "~58.0.26",
+    "expo-localization": "~58.0.5",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.11.1"
+  },
+  "devDependencies": {
+    "autoglot": "0.3.4"
+  }
+}

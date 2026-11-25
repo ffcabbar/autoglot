@@ -1,0 +1,5 @@
+{
+  "source": "messages/en.json",
+  "messagesDir": "messages",
+  "lockFile": "translate.lock"
+}

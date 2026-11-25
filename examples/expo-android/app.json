@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "Trail Notes",
+    "slug": "autoglot-expo-android",
+    "version": "1.0.0",
+    "platforms": ["android"]
+  }
+}
