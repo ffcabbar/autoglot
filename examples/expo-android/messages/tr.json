@@ -1,0 +1,13 @@
+{
+  "app": {
+    "title": "Rota Notları",
+    "language": "Uygulama dili"
+  },
+  "trail": {
+    "name": "Sedir Sırtı",
+    "description": "Sedirlerin arasından sırtı takip ederek sakin bir seyir noktasına ulaş.",
+    "distance": "Mesafe",
+    "time": "Yürüyüş süresi",
+    "minutes": "{count} dk"
+  }
+}

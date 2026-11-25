@@ -1,0 +1,10 @@
+version: 1
+source: messages/en.json
+hashes:
+  app.title: dd6522ab0dc5ac8abb8f1c4e0adb5772
+  app.language: 57eeaf8fd406ae6a8d8dac662e18da48
+  trail.name: caf17bf79f800e28da2fe71b123f4dfc
+  trail.description: 9841f6e477d7ca4cda7b4b721c1aa150
+  trail.distance: 0aa6f4210bf373c95eda00232e93cd98
+  trail.time: c56c3d19313848812d94cf965e9d9db2
+  trail.minutes: ba72c27e68b6bd834cc28003e960b9cf
